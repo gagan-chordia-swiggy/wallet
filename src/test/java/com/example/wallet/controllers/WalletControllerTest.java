@@ -1,5 +1,6 @@
 package com.example.wallet.controllers;
 
+import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.MoneyRequest;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
@@ -7,6 +8,11 @@ import com.example.wallet.models.Wallet;
 import com.example.wallet.services.WalletService;
 
 import org.junit.jupiter.api.Test;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,9 +24,11 @@ public class WalletControllerTest {
         WalletService walletService = new WalletService(wallet);
         WalletController walletController = new WalletController(walletService);
 
-        walletController.deposit(new MoneyRequest(15));
+        ResponseEntity<ApiResponse> response = walletController.deposit(new MoneyRequest(15));
 
         assertEquals(15, wallet.getBalance());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(wallet, Objects.requireNonNull(response.getBody()).getData().get("wallet"));
     }
 
     @Test
@@ -28,7 +36,15 @@ public class WalletControllerTest {
         WalletService walletService = new WalletService(new Wallet());
         WalletController walletController = new WalletController(walletService);
 
-        assertThrows(InvalidAmountException.class, () -> walletController.deposit(new MoneyRequest(-2)));
+        assertThrows(InvalidAmountException.class, () -> {
+            ResponseEntity<ApiResponse> response = walletController.deposit(new MoneyRequest(-2));
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals(
+                    "Non positive amount has been entered",
+                    Objects.requireNonNull(response.getBody()).getMessage()
+            );
+        });
     }
 
     @Test
@@ -37,9 +53,11 @@ public class WalletControllerTest {
         WalletService walletService = new WalletService(wallet);
         WalletController walletController = new WalletController(walletService);
 
-        walletController.withdraw(new MoneyRequest(10));
+        ResponseEntity<ApiResponse> response = walletController.withdraw(new MoneyRequest(10));
 
         assertEquals(20, wallet.getBalance());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(wallet, Objects.requireNonNull(response.getBody()).getData().get("wallet"));
     }
 
     @Test
@@ -48,7 +66,15 @@ public class WalletControllerTest {
         WalletService walletService = new WalletService(wallet);
         WalletController walletController = new WalletController(walletService);
 
-        assertThrows(InvalidAmountException.class, () -> walletController.withdraw(new MoneyRequest(-1)));
+        assertThrows(InvalidAmountException.class, () -> {
+            ResponseEntity<ApiResponse> response = walletController.withdraw(new MoneyRequest(-2));
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals(
+                    "Non positive amount has been entered",
+                    Objects.requireNonNull(response.getBody()).getMessage()
+            );
+        });
     }
 
     @Test
@@ -57,6 +83,14 @@ public class WalletControllerTest {
         WalletService walletService = new WalletService(wallet);
         WalletController walletController = new WalletController(walletService);
 
-        assertThrows(OverWithdrawalException.class, () -> walletController.withdraw(new MoneyRequest(40)));
+        assertThrows(OverWithdrawalException.class, () -> {
+            ResponseEntity<ApiResponse> response = walletController.withdraw(new MoneyRequest(40));
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals(
+                    "No sufficient balance",
+                    Objects.requireNonNull(response.getBody()).getMessage()
+            );
+        });
     }
 }

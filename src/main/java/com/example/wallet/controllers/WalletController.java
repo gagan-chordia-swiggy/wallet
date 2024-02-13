@@ -1,16 +1,13 @@
 package com.example.wallet.controllers;
 
 import com.example.wallet.dto.ApiResponse;
-import com.example.wallet.dto.MoneyRequest;
+import com.example.wallet.dto.Money;
 import com.example.wallet.services.WalletService;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,13 +15,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class WalletController {
     private final WalletService walletService;
 
-    @PatchMapping("/deposit")
-    public ResponseEntity<ApiResponse> deposit(@RequestBody MoneyRequest request) {
-        return this.walletService.deposit(request);
+    @PostMapping
+    public ResponseEntity<ApiResponse> create() {
+        return this.walletService.create();
     }
 
-    @PatchMapping("/withdraw")
-    public ResponseEntity<ApiResponse> withdraw(@RequestBody MoneyRequest request) {
-        return this.walletService.withdraw(request);
+    @PatchMapping("/{id}/deposit")
+    public ResponseEntity<ApiResponse> deposit(@PathVariable(value = "id") Long id, @RequestBody Money request) {
+        return this.walletService.deposit(id, request);
+    }
+
+    @PatchMapping("/{id}/withdraw")
+    public ResponseEntity<ApiResponse> withdraw(@PathVariable(value = "id") Long id, @RequestBody Money request) {
+        return this.walletService.withdraw(id, request);
     }
 }

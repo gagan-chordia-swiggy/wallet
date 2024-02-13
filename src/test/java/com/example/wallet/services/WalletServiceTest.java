@@ -1,40 +1,77 @@
 package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
-import com.example.wallet.dto.MoneyRequest;
+import com.example.wallet.dto.Money;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
-import com.example.wallet.models.Wallet;
 
+import com.example.wallet.exceptions.WalletNotFoundException;
+import com.example.wallet.models.Wallet;
+import com.example.wallet.repository.WalletRepository;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 public class WalletServiceTest {
+
+    @Mock
+    private WalletRepository walletRepository;
+
+    @InjectMocks
+    private WalletService walletService;
+
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void test_walletIsCreated() {
+        ResponseEntity<ApiResponse> response = walletService.create();
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("Wallet created", Objects.requireNonNull(response.getBody()).getMessage());
+    }
+
     @Test
     void test_amountDeposited() {
-        Wallet wallet = new Wallet();
-        WalletService walletService = new WalletService(wallet);
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(new Wallet(1L, new Money())));
+        ResponseEntity<ApiResponse> response = walletService.deposit(1L, new Money(10));
 
-        ResponseEntity<ApiResponse> response = walletService.deposit(new MoneyRequest(15));
-
-        assertEquals(15, wallet.getBalance());
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(wallet, Objects.requireNonNull(response.getBody()).getData().get("wallet"));
+        assertEquals("Amount deposited", Objects.requireNonNull(response.getBody()).getMessage());
+    }
+
+    @Test
+    void test_invalidWalletWhileDepositing_throwsException() {
+        assertThrows(WalletNotFoundException.class, () -> {
+            when(walletRepository.findById(1L)).thenReturn(Optional.empty());
+            ResponseEntity<ApiResponse> response = walletService.deposit(1L, new Money(5));
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("Wallet not found", Objects.requireNonNull(response.getBody()).getMessage());
+        });
     }
 
     @Test
     void test_invalidAmountDeposited_throwsException() {
-        WalletService walletService = new WalletService(new Wallet());
-
         assertThrows(InvalidAmountException.class, () -> {
-            ResponseEntity<ApiResponse> response = walletService.deposit(new MoneyRequest(-2));
+            when(walletRepository.findById(1L)).thenReturn(Optional.of(new Wallet(1L, new Money())));
+            ResponseEntity<ApiResponse> response = walletService.deposit(1L, new Money(-2));
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals(
@@ -46,23 +83,32 @@ public class WalletServiceTest {
 
     @Test
     void test_amountWithdrawn() {
-        Wallet wallet = new Wallet(30);
-        WalletService walletService = new WalletService(wallet);
+        Wallet wallet = new Wallet(1L, new Money());
+        wallet.deposit(new Money(20));
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
 
-        ResponseEntity<ApiResponse> response = walletService.withdraw(new MoneyRequest(10));
+        ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(10));
 
-        assertEquals(20, wallet.getBalance());
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(wallet, Objects.requireNonNull(response.getBody()).getData().get("wallet"));
+        assertEquals("Amount withdrawn", Objects.requireNonNull(response.getBody()).getMessage());
+    }
+
+    @Test
+    void test_invalidWalletWhileWithdrawing_throwsException() {
+        assertThrows(WalletNotFoundException.class, () -> {
+            when(walletRepository.findById(1L)).thenReturn(Optional.empty());
+            ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(5));
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("Wallet not found", Objects.requireNonNull(response.getBody()).getMessage());
+        });
     }
 
     @Test
     void test_invalidAmountWithdrawn_throwsException() {
-        Wallet wallet = new Wallet(30);
-        WalletService walletService = new WalletService(wallet);
-
         assertThrows(InvalidAmountException.class, () -> {
-            ResponseEntity<ApiResponse> response = walletService.withdraw(new MoneyRequest(-2));
+            when(walletRepository.findById(1L)).thenReturn(Optional.of(new Wallet(1L, new Money())));
+            ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(-2));
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals(
@@ -74,11 +120,9 @@ public class WalletServiceTest {
 
     @Test
     void test_OverWithdrawal_throwsException() {
-        Wallet wallet = new Wallet(30);
-        WalletService walletService = new WalletService(wallet);
-
         assertThrows(OverWithdrawalException.class, () -> {
-            ResponseEntity<ApiResponse> response = walletService.withdraw(new MoneyRequest(40));
+            when(walletRepository.findById(1L)).thenReturn(Optional.of(new Wallet(1L, new Money())));
+            ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(40));
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals(

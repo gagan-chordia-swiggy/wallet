@@ -1,96 +1,73 @@
 package com.example.wallet.controllers;
 
-import com.example.wallet.dto.ApiResponse;
-import com.example.wallet.dto.MoneyRequest;
-import com.example.wallet.exceptions.InvalidAmountException;
-import com.example.wallet.exceptions.OverWithdrawalException;
-import com.example.wallet.models.Wallet;
-import com.example.wallet.services.WalletService;
-
 import org.junit.jupiter.api.Test;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Objects;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+@SpringBootTest
+@AutoConfigureMockMvc
 public class WalletControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
     @Test
-    void test_amountDeposited() {
-        Wallet wallet = new Wallet();
-        WalletService walletService = new WalletService(wallet);
-        WalletController walletController = new WalletController(walletService);
-
-        ResponseEntity<ApiResponse> response = walletController.deposit(new MoneyRequest(15));
-
-        assertEquals(15, wallet.getBalance());
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(wallet, Objects.requireNonNull(response.getBody()).getData().get("wallet"));
+    void test_walletIsCreated() throws Exception {
+        mockMvc.perform(post("/api/v1/wallets")).andExpect(status().isCreated());
     }
 
     @Test
-    void test_invalidAmountDeposited_throwsException() {
-        WalletService walletService = new WalletService(new Wallet());
-        WalletController walletController = new WalletController(walletService);
-
-        assertThrows(InvalidAmountException.class, () -> {
-            ResponseEntity<ApiResponse> response = walletController.deposit(new MoneyRequest(-2));
-
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertEquals(
-                    "Non positive amount has been entered",
-                    Objects.requireNonNull(response.getBody()).getMessage()
-            );
-        });
+    void test_amountDeposited() throws Exception {
+        mockMvc.perform(post("/api/v1/wallets")).andExpect(status().isCreated());
+        String amount = "{\"amount\" : 10.0}";
+        mockMvc.perform(patch("/api/v1/wallets/1/deposit")
+                .contentType("application/json")
+                .content(amount)
+        ).andExpect(status().isOk());
     }
 
     @Test
-    void test_amountWithdrawn() {
-        Wallet wallet = new Wallet(30);
-        WalletService walletService = new WalletService(wallet);
-        WalletController walletController = new WalletController(walletService);
-
-        ResponseEntity<ApiResponse> response = walletController.withdraw(new MoneyRequest(10));
-
-        assertEquals(20, wallet.getBalance());
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(wallet, Objects.requireNonNull(response.getBody()).getData().get("wallet"));
+    void test_invalidAmountDeposited_throwsException() throws Exception {
+        String amount = "{\"amount\" : 0}";
+        mockMvc.perform(patch("/api/v1/wallets/1/deposit")
+                .contentType("application/json")
+                .content(amount)
+        ).andExpect(status().isBadRequest());
     }
 
     @Test
-    void test_invalidAmountWithdrawn_throwsException() {
-        Wallet wallet = new Wallet(30);
-        WalletService walletService = new WalletService(wallet);
-        WalletController walletController = new WalletController(walletService);
-
-        assertThrows(InvalidAmountException.class, () -> {
-            ResponseEntity<ApiResponse> response = walletController.withdraw(new MoneyRequest(-2));
-
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertEquals(
-                    "Non positive amount has been entered",
-                    Objects.requireNonNull(response.getBody()).getMessage()
-            );
-        });
+    void test_amountWithdrawn() throws Exception {
+        mockMvc.perform(post("/api/v1/wallets")).andExpect(status().isCreated());
+        String amount = "{\"amount\" : 5.0}";
+        this.mockMvc.perform(patch("/api/v1/wallets/1/withdraw")
+                .contentType("application/json")
+                .content(amount)
+        ).andExpect(status().isOk());
     }
 
     @Test
-    void test_OverWithdrawal_throwsException() {
-        Wallet wallet = new Wallet(30);
-        WalletService walletService = new WalletService(wallet);
-        WalletController walletController = new WalletController(walletService);
+    void test_invalidAmountWithdrawn_throwsException() throws Exception {
+        mockMvc.perform(post("/api/v1/wallets")).andExpect(status().isCreated());
+        String amount = "{\"amount\" : 0}";
+        mockMvc.perform(patch("/api/v1/wallets/1/withdraw")
+                .contentType("application/json")
+                .content(amount)
+        ).andExpect(status().isBadRequest());
+    }
 
-        assertThrows(OverWithdrawalException.class, () -> {
-            ResponseEntity<ApiResponse> response = walletController.withdraw(new MoneyRequest(40));
-
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertEquals(
-                    "No sufficient balance",
-                    Objects.requireNonNull(response.getBody()).getMessage()
-            );
-        });
+    @Test
+    void test_OverWithdrawal_throwsException() throws Exception {
+        String amount = "{\"amount\" : 15}";
+        mockMvc.perform(patch("/api/v1/wallets/1/withdraw")
+                .contentType("application/json")
+                .content(amount)
+        ).andExpect(status().isBadRequest());
     }
 }

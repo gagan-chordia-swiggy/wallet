@@ -1,5 +1,6 @@
 package com.example.wallet.models;
 
+import com.example.wallet.dto.Money;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
 import org.junit.jupiter.api.Test;
@@ -12,38 +13,40 @@ public class WalletTest {
     void test_depositAmountToWallet() {
         Wallet wallet = new Wallet();
 
-        wallet.deposit(25.0);
+        wallet.deposit(new Money(25));
 
-        assertEquals(25, wallet.getBalance());
+        assertEquals(25, wallet.getMoney().getAmount());
     }
 
     @Test
     void test_depositInvalidAmountToWallet_throwsException() {
         Wallet wallet = new Wallet();
 
-        assertThrows(InvalidAmountException.class, () -> wallet.deposit(0));
+        assertThrows(InvalidAmountException.class, () -> wallet.deposit(new Money(0)));
     }
 
     @Test
     void test_withdrawingAmountFromWallet() {
-        Wallet wallet = new Wallet(100);
+        Wallet wallet = new Wallet();
 
-        wallet.withdraw(15);
+        wallet.deposit(new Money(100));
+        wallet.withdraw(new Money(15));
 
-        assertEquals(85, wallet.getBalance());
+        assertEquals(85, wallet.getMoney().getAmount());
     }
 
     @Test
     void test_withdrawingInvalidAmount_throwsException() {
-        Wallet wallet = new Wallet(10);
+        Wallet wallet = new Wallet();
 
-        assertThrows(InvalidAmountException.class, () -> wallet.withdraw(0));
+        assertThrows(InvalidAmountException.class, () -> wallet.withdraw(new Money(0)));
     }
 
     @Test
     void test_withdrawingMoreThanBalance_throwsException() {
-        Wallet wallet = new Wallet(20);
+        Wallet wallet = new Wallet();
+        wallet.deposit(new Money(10));
 
-        assertThrows(OverWithdrawalException.class, () -> wallet.withdraw(30));
+        assertThrows(OverWithdrawalException.class, () -> wallet.withdraw(new Money(30)));
     }
 }

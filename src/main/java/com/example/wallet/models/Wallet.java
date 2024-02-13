@@ -1,50 +1,57 @@
 package com.example.wallet.models;
 
+import com.example.wallet.dto.Money;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
+
+import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.stereotype.Component;
+import org.hibernate.annotations.Type;
 
 @Builder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Slf4j
-@Component
+@Entity
+@Table(name = "wallets")
 public class Wallet {
-    private double balance;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
 
-    public void withdraw(double amount) {
+    private Money money = new Money();
+
+    public void withdraw(Money amount) {
         log.info("Wallet --> Withdrawal start");
 
-        if (amount < 0.01) {
+        if (amount.getAmount() < 0.01) {
             log.error("Wallet --> Invalid Amount");
             throw new InvalidAmountException();
         }
 
-        if (this.balance - amount < 0) {
+        if (this.money.getAmount() - amount.getAmount() < 0) {
             log.error("Wallet --> No Balance");
             throw new OverWithdrawalException();
         }
 
         log.info("Wallet --> Success");
-        this.balance -= amount;
+        this.money.setAmount(this.money.getAmount() - amount.getAmount());
     }
 
-    public void deposit(double amount) {
+    public void deposit(Money amount) {
         log.info("Wallet --> Deposit start");
-        if (amount < 0.01) {
+        if (amount.getAmount() < 0.01) {
             log.error("Wallet --> Invalid Amount");
             throw new InvalidAmountException();
         }
 
         log.info("Wallet --> Success");
-        this.balance += amount;
+        this.money.setAmount(this.money.getAmount() + amount.getAmount());
     }
 }

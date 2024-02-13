@@ -3,6 +3,7 @@ package com.example.wallet.components;
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
+import com.example.wallet.exceptions.WalletNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,6 +31,19 @@ public class GlobalExceptionHandler {
         ApiResponse response = ApiResponse.builder()
                 .message("No sufficient balance")
                 .developerMessage("Over withdrawal")
+                .status(HttpStatus.BAD_REQUEST)
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(value = WalletNotFoundException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ApiResponse> handleWalletNotFoundException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("Wallet not found")
+                .developerMessage("Wallet not found")
                 .status(HttpStatus.BAD_REQUEST)
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .build();

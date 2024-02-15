@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -68,5 +69,19 @@ public class WalletService {
         walletRepository.save(wallet);
 
         return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<ApiResponse> getWallets() {
+        List<Wallet> wallets = walletRepository.findAll();
+
+        ApiResponse response = ApiResponse.builder()
+                .message("fetched")
+                .developerMessage("fetched")
+                .status(HttpStatus.FOUND)
+                .statusCode(HttpStatus.FOUND.value())
+                .data(Map.of("wallets", wallets))
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

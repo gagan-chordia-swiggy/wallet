@@ -1,6 +1,7 @@
 package com.example.wallet.models;
 
 import com.example.wallet.dto.Money;
+import com.example.wallet.enums.Role;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
 
@@ -11,7 +12,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.annotations.Type;
 
 @Builder
 @Data
@@ -22,7 +22,7 @@ import org.hibernate.annotations.Type;
 @Table(name = "wallets")
 public class Wallet {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Money money = new Money();
@@ -53,5 +53,6 @@ public class Wallet {
 
         log.info("Wallet --> Success");
         this.money.setAmount(this.money.getAmount() + amount.getAmount());
+        this.money.setCurrency(amount.getCurrency());
     }
 }

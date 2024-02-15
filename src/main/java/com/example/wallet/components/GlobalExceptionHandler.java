@@ -1,9 +1,7 @@
 package com.example.wallet.components;
 
 import com.example.wallet.dto.ApiResponse;
-import com.example.wallet.exceptions.InvalidAmountException;
-import com.example.wallet.exceptions.OverWithdrawalException;
-import com.example.wallet.exceptions.WalletNotFoundException;
+import com.example.wallet.exceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -46,6 +44,45 @@ public class GlobalExceptionHandler {
                 .developerMessage("Wallet not found")
                 .status(HttpStatus.BAD_REQUEST)
                 .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(value = UserAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ApiResponse> handleUserAlreadyExistsException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("User with same username exists")
+                .developerMessage("same username")
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST)
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(value = UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ApiResponse> handleUserNotFoundException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("User not found")
+                .developerMessage("user not found")
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST)
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(value = InvalidPasswordException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ApiResponse> handleInvalidPasswordException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("Invalid password")
+                .developerMessage("invalid password")
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST)
                 .build();
 
         return ResponseEntity.badRequest().body(response);

@@ -5,28 +5,39 @@ import com.example.wallet.dto.Money;
 import com.example.wallet.services.WalletService;
 
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/v1/wallets")
 public class WalletController {
-    private final WalletService walletService;
+    @Autowired
+    private WalletService walletService;
 
     @PostMapping
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse> create() {
         return this.walletService.create();
     }
 
     @PatchMapping("/{id}/deposit")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse> deposit(@PathVariable(value = "id") Long id, @RequestBody Money request) {
         return this.walletService.deposit(id, request);
     }
 
     @PatchMapping("/{id}/withdraw")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse> withdraw(@PathVariable(value = "id") Long id, @RequestBody Money request) {
         return this.walletService.withdraw(id, request);
     }
+
+    @GetMapping
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse> getWallets() {
+        return this.walletService.getWallets();
+    }
+
 }

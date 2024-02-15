@@ -1,6 +1,7 @@
 package com.example.wallet.models;
 
 import com.example.wallet.dto.Money;
+import com.example.wallet.enums.Currency;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ public class WalletTest {
     void test_depositAmountToWallet() {
         Wallet wallet = new Wallet();
 
-        wallet.deposit(new Money(25));
+        wallet.deposit(new Money(25, Currency.INR));
 
         assertEquals(25, wallet.getMoney().getAmount());
     }
@@ -22,15 +23,15 @@ public class WalletTest {
     void test_depositInvalidAmountToWallet_throwsException() {
         Wallet wallet = new Wallet();
 
-        assertThrows(InvalidAmountException.class, () -> wallet.deposit(new Money(0)));
+        assertThrows(InvalidAmountException.class, () -> wallet.deposit(new Money(0, Currency.INR)));
     }
 
     @Test
     void test_withdrawingAmountFromWallet() {
         Wallet wallet = new Wallet();
 
-        wallet.deposit(new Money(100));
-        wallet.withdraw(new Money(15));
+        wallet.deposit(new Money(100, Currency.INR));
+        wallet.withdraw(new Money(15, Currency.INR));
 
         assertEquals(85, wallet.getMoney().getAmount());
     }
@@ -39,14 +40,14 @@ public class WalletTest {
     void test_withdrawingInvalidAmount_throwsException() {
         Wallet wallet = new Wallet();
 
-        assertThrows(InvalidAmountException.class, () -> wallet.withdraw(new Money(0)));
+        assertThrows(InvalidAmountException.class, () -> wallet.withdraw(new Money(0, Currency.INR)));
     }
 
     @Test
     void test_withdrawingMoreThanBalance_throwsException() {
         Wallet wallet = new Wallet();
-        wallet.deposit(new Money(10));
+        wallet.deposit(new Money(10, Currency.INR));
 
-        assertThrows(OverWithdrawalException.class, () -> wallet.withdraw(new Money(30)));
+        assertThrows(OverWithdrawalException.class, () -> wallet.withdraw(new Money(30, Currency.INR)));
     }
 }

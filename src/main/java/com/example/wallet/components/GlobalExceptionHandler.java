@@ -36,19 +36,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
-    @ExceptionHandler(value = WalletNotFoundException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ApiResponse> handleWalletNotFoundException() {
-        ApiResponse response = ApiResponse.builder()
-                .message("Wallet not found")
-                .developerMessage("Wallet not found")
-                .status(HttpStatus.BAD_REQUEST)
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .build();
-
-        return ResponseEntity.badRequest().body(response);
-    }
-
     @ExceptionHandler(value = UserAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiResponse> handleUserAlreadyExistsException() {

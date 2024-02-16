@@ -30,9 +30,6 @@ public class AuthenticationServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private WalletService walletService;
-
-    @Mock
     private JwtService jwtService;
 
     @Mock

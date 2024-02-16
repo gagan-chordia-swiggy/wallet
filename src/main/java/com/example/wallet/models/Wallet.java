@@ -30,10 +30,6 @@ public class Wallet {
 
     private Money money = new Money();
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
     public Wallet(Money money) {
         this.money = money;
     }

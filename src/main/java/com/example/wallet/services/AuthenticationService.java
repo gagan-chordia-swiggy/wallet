@@ -24,7 +24,6 @@ public class AuthenticationService {
     private final AuthenticationManager authManager;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final WalletService walletService;
     private final JwtService jwtService;
 
     public ResponseEntity<ApiResponse> register(UserRequest request) {
@@ -40,8 +39,6 @@ public class AuthenticationService {
                 .build();
 
         userRepository.save(user);
-
-        walletService.create(user);
 
         ApiResponse response = ApiResponse.builder()
                 .message("User registered successfully")

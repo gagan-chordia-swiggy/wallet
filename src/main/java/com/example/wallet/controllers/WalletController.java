@@ -7,6 +7,7 @@ import com.example.wallet.services.WalletService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -35,4 +36,10 @@ public class WalletController {
         return this.walletService.getWallets();
     }
 
+    @DeleteMapping
+    @PreAuthorize("hasRole('USER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteWallet() {
+        this.walletService.deleteWallet();
+    }
 }

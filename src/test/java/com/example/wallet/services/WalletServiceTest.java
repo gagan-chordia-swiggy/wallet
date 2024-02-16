@@ -8,6 +8,7 @@ import com.example.wallet.exceptions.OverWithdrawalException;
 
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
+import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,9 @@ public class WalletServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private WalletService walletService;
@@ -150,5 +154,22 @@ public class WalletServiceTest {
         List<Wallet> wallets = (List<Wallet>) Objects.requireNonNull(response.getBody()).getData().get("wallets");
 
         assertEquals(0, wallets.size());
+    }
+
+    @Test
+    void test_walletIsDeleted() {
+        User user = mock(User.class);
+        Wallet wallet = new Wallet(new Money(0, Currency.INR));
+        SecurityContext context = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(context);
+        Authentication authentication = mock(Authentication.class);
+
+        when(context.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(user.getWallet()).thenReturn(wallet);
+        walletService.deleteWallet();
+
+        verify(walletRepository, times(1)).delete(wallet);
+        verify(userRepository, times(1)).save(user);
     }
 }

@@ -21,9 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.*;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -159,5 +157,11 @@ public class WalletControllerTest {
         when(walletService.getWallets()).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
 
         mockMvc.perform(get("/api/v1/wallets")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void test_deleteWallet() throws Exception {
+        mockMvc.perform(delete("/api/v1/wallets")).andExpect(status().isNoContent());
+        verify(walletService, times(1)).deleteWallet();
     }
 }

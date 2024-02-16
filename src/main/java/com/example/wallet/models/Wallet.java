@@ -1,16 +1,19 @@
 package com.example.wallet.models;
 
 import com.example.wallet.dto.Money;
-import com.example.wallet.enums.Role;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
 
-import jakarta.persistence.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 @Builder
@@ -26,6 +29,14 @@ public class Wallet {
     private Long id;
 
     private Money money = new Money();
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public Wallet(Money money) {
+        this.money = money;
+    }
 
     public void withdraw(Money amount) {
         log.info("Wallet --> Withdrawal start");

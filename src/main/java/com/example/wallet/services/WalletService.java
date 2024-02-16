@@ -2,7 +2,9 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
+import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.exceptions.WalletNotFoundException;
+import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
 
 import com.example.wallet.repository.WalletRepository;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,8 +23,23 @@ import java.util.Map;
 public class WalletService {
     private final WalletRepository walletRepository;
 
-    public ResponseEntity<ApiResponse> create() {
+    public ResponseEntity<ApiResponse> create(User user) {
         Wallet wallet = new Wallet();
+
+        Wallet existing = walletRepository.findByUser(user).orElse(null);
+
+        if (existing != null) {
+            ApiResponse response = ApiResponse.builder()
+                    .message("User can have only 1 wallet")
+                    .developerMessage("wallet exists")
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build();
+
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        wallet.setUser(user);
         walletRepository.save(wallet);
 
         ApiResponse response = ApiResponse.builder()
@@ -35,10 +53,18 @@ public class WalletService {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    public ResponseEntity<ApiResponse> deposit(Long id, Money request) {
-        Wallet wallet = walletRepository.findById(id).orElseThrow(WalletNotFoundException::new);
+    public ResponseEntity<ApiResponse> deposit(Money moneyRequest) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        System.out.println(user);
 
-        wallet.deposit(request);
+        if (user == null) {
+            throw new UserNotFoundException();
+        }
+
+        Wallet wallet = walletRepository.findByUser(user).orElseThrow(WalletNotFoundException::new);
+        System.out.println(wallet);
+
+        wallet.deposit(moneyRequest);
 
         ApiResponse response = ApiResponse.builder()
                 .message("Amount deposited")
@@ -53,8 +79,14 @@ public class WalletService {
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<ApiResponse> withdraw(Long id, Money request) {
-        Wallet wallet = walletRepository.findById(id).orElseThrow(WalletNotFoundException::new);
+    public ResponseEntity<ApiResponse> withdraw(Money request) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (user == null) {
+            throw new UserNotFoundException();
+        }
+
+        Wallet wallet = walletRepository.findByUser(user).orElseThrow(WalletNotFoundException::new);
 
         wallet.withdraw(request);
 

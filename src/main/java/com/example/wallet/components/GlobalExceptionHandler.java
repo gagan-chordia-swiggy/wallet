@@ -75,12 +75,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
-    @ExceptionHandler(value = InvalidPasswordException.class)
+    @ExceptionHandler(value = InvalidCredentialsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiResponse> handleInvalidPasswordException() {
         ApiResponse response = ApiResponse.builder()
-                .message("Invalid password")
-                .developerMessage("invalid password")
+                .message("Invalid credentials")
+                .developerMessage("invalid credentials")
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .status(HttpStatus.BAD_REQUEST)
                 .build();

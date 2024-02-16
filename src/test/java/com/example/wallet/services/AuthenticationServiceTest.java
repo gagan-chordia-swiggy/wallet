@@ -3,6 +3,7 @@ package com.example.wallet.services;
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.UserRequest;
 import com.example.wallet.enums.Role;
+import com.example.wallet.exceptions.InvalidCredentialsException;
 import com.example.wallet.exceptions.UserAlreadyExistsException;
 import com.example.wallet.models.User;
 import com.example.wallet.repository.UserRepository;
@@ -20,13 +21,16 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 public class AuthenticationServiceTest {
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private WalletService walletService;
 
     @Mock
     private JwtService jwtService;
@@ -46,47 +50,83 @@ public class AuthenticationServiceTest {
     }
 
     @Test
-    void test_registerUserSuccessfully() {
+    void test_userRegisteredSuccessfully() {
         UserRequest request = UserRequest.builder()
-                .username("username")
                 .name("name")
+                .username("uname")
                 .password("password")
                 .role(Role.USER)
                 .build();
+        User user = mock(User.class);
 
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(user);
         ResponseEntity<ApiResponse> response = authService.register(request);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("User registered successfully", Objects.requireNonNull(response.getBody()).getMessage());
+        assertEquals("user registered", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }
 
     @Test
-    void test_RegisterUserWithExistingUsername_throwsException() {
+    void test_existingUsernameCannotBeRegisteredAgain_throwsException() {
         UserRequest request = UserRequest.builder()
-                .username("username")
                 .name("name")
+                .username("uname")
                 .password("password")
                 .role(Role.USER)
                 .build();
 
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(new User()));
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.of(new User()));
 
         assertThrows(UserAlreadyExistsException.class, () -> {
             ResponseEntity<ApiResponse> response = authService.register(request);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertEquals("User with same username exists", Objects.requireNonNull(response.getBody()).getMessage());
+            assertEquals("same username", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
         });
     }
 
     @Test
-    void test_LoginUserSuccessfully() {
-        User user = User.builder()
-                .name("abc")
-                .username("abc")
-                .password("abc")
-                .role(Role.USER)
+    void test_loginUserSuccessfully() {
+        UserRequest request = UserRequest.builder()
+                .name(null)
+                .username("uname")
+                .password("password")
+                .role(null)
                 .build();
+        User user = User.builder()
+                .name(null)
+                .username(request.getUsername())
+                .password(request.getPassword())
+                .role(null)
+                .build();
+
+        when(authenticationManager.authenticate(any())).thenReturn(null);
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.of(user));
+        when(jwtService.generateToken(user)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
+        ResponseEntity<ApiResponse> response = authService.login(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("logged in", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+    }
+
+    @Test
+    void test_loginUserWithWrongCredentials_throwsException() {
+        UserRequest request = UserRequest.builder()
+                .name(null)
+                .username("uname")
+                .password("password")
+                .role(null)
+                .build();
+
+        when(authenticationManager.authenticate(any())).thenThrow(new InvalidCredentialsException());
+
+        assertThrows(InvalidCredentialsException.class, () -> {
+            ResponseEntity<ApiResponse> response = authService.login(request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("invalid credentials", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        });
     }
 }

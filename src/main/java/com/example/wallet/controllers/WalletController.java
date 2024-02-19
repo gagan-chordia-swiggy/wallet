@@ -35,11 +35,4 @@ public class WalletController {
     public ResponseEntity<ApiResponse> getWallets() {
         return this.walletService.getWallets();
     }
-
-    @DeleteMapping
-    @PreAuthorize("hasRole('USER')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteWallet() {
-        this.walletService.deleteWallet();
-    }
 }

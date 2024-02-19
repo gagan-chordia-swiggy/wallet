@@ -158,10 +158,4 @@ public class WalletControllerTest {
 
         mockMvc.perform(get("/api/v1/wallets")).andExpect(status().isUnauthorized());
     }
-
-    @Test
-    void test_deleteWallet() throws Exception {
-        mockMvc.perform(delete("/api/v1/wallets")).andExpect(status().isNoContent());
-        verify(walletService, times(1)).deleteWallet();
-    }
 }

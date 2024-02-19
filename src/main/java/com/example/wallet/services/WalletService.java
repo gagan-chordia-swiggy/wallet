@@ -22,7 +22,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WalletService {
     private final WalletRepository walletRepository;
-    private final UserRepository userRepository;
 
     public ResponseEntity<ApiResponse> deposit(Money moneyRequest) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -84,15 +83,5 @@ public class WalletService {
                 .build();
 
         return ResponseEntity.status(response.getStatus()).body(response);
-    }
-
-    public void deleteWallet() {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        Wallet wallet = user.getWallet();
-        user.setWallet(null);
-
-        userRepository.save(user);
-        walletRepository.delete(wallet);
     }
 }

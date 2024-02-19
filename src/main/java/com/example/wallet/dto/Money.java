@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
 public class Money {
@@ -20,4 +19,9 @@ public class Money {
 
     @Enumerated(EnumType.STRING)
     private Currency currency;
+
+    public Money() {
+        this.amount = 0;
+        this.currency = Currency.INR;
+    }
 }

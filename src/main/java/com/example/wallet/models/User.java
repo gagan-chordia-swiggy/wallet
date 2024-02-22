@@ -1,5 +1,6 @@
 package com.example.wallet.models;
 
+import com.example.wallet.enums.Location;
 import com.example.wallet.enums.Role;
 import jakarta.persistence.*;
 
@@ -34,12 +35,10 @@ public class User implements UserDetails {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Location location;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "wallet_id")
-    @Builder.Default
-    private Wallet wallet = new Wallet();
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

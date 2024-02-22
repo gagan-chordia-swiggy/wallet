@@ -4,6 +4,7 @@ import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.services.TransactionService;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,14 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/users/wallets/transactions")
+@RequiredArgsConstructor
 public class TransactionController {
-
-    @Autowired
-    private TransactionService transactionService;
+    private final TransactionService transactionService;
 
     @PatchMapping
     public ResponseEntity<ApiResponse> transact(@RequestBody TransactionRequest request) {
-        return this.transactionService.transact(request.getReceiver(), request.getMoney());
+        return this.transactionService.transact(request);
     }
 
     @GetMapping("/")

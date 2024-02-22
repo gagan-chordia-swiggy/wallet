@@ -2,11 +2,13 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
+import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.dto.TransactionResponse;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.TransactionForSameUserException;
 import com.example.wallet.exceptions.TransactionNotFoundException;
 import com.example.wallet.exceptions.UserNotFoundException;
+import com.example.wallet.exceptions.WalletNotFoundException;
 import com.example.wallet.models.Transaction;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
@@ -34,35 +36,33 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
 
-    public ResponseEntity<ApiResponse> transact(String receiver, Money request) {
+    public ResponseEntity<ApiResponse> transact(TransactionRequest request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (user == null) {
             throw new UserNotFoundException();
         }
 
-        User anotherUser = userRepository.findByUsername(receiver).orElseThrow(UserNotFoundException::new);
+        User anotherUser = userRepository.findByUsername(request.getReceiver()).orElseThrow(UserNotFoundException::new);
 
-        if (user.equals(anotherUser)) {
-            throw new TransactionForSameUserException();
-        }
+        Wallet usersWallet = walletRepository.findByIdAndUser(request.getSendingWalletId(), user)
+                .orElseThrow(WalletNotFoundException::new);
+        Wallet anotherUsersWallet = walletRepository.findByIdAndUser(request.getReceivingWalletId(), user)
+                .orElseThrow(WalletNotFoundException::new);
 
-        Wallet usersWallet = user.getWallet();
-        Wallet anotherUsersWallet = anotherUser.getWallet();
-
-        usersWallet.withdraw(request);
-        anotherUsersWallet.deposit(request);
+        usersWallet.withdraw(request.getMoney());
+        anotherUsersWallet.deposit(request.getMoney());
 
         Long timestamp = System.currentTimeMillis();
 
         Transaction transaction = Transaction.builder()
                 .user(user)
-                .money(request)
+                .money(request.getMoney())
                 .type(TransactionType.TRANSFERRED)
                 .timestamp(timestamp)
                 .build();
         Transaction anotherTransaction = Transaction.builder()
                 .user(anotherUser)
-                .money(request)
+                .money(request.getMoney())
                 .type(TransactionType.RECEIVED)
                 .timestamp(timestamp)
                 .build();

@@ -2,6 +2,7 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.UserRequest;
+import com.example.wallet.enums.Location;
 import com.example.wallet.enums.Role;
 import com.example.wallet.exceptions.InvalidCredentialsException;
 import com.example.wallet.exceptions.MissingCredentialsException;
@@ -45,6 +46,9 @@ public class AuthenticationServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private WalletService walletService;
+
     @InjectMocks
     private AuthenticationService authService;
 
@@ -59,6 +63,7 @@ public class AuthenticationServiceTest {
                 .name("name")
                 .username("uname")
                 .password("password")
+                .location(Location.INDIA)
                 .role(Role.USER)
                 .build();
         User user = mock(User.class);

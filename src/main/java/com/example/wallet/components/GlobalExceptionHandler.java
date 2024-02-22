@@ -117,4 +117,16 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+
+    @ExceptionHandler(value = WalletNotFoundException.class)
+    public ResponseEntity<ApiResponse> handleWalletNotFoundException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("Cannot find the wallet")
+                .developerMessage("wallet not found")
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST)
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }

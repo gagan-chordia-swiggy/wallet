@@ -2,9 +2,13 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
+import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.TransactionType;
-import com.example.wallet.exceptions.*;
+import com.example.wallet.exceptions.InvalidAmountException;
+import com.example.wallet.exceptions.OverWithdrawalException;
+import com.example.wallet.exceptions.TransactionNotFoundException;
+import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.Transaction;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
@@ -64,19 +68,22 @@ public class TransactionServiceTest {
     void test_transactionIsComplete() {
         User user = mock(User.class);
         User anotherUser = mock(User.class);
-        Wallet wallet = spy(new Wallet(new Money(300, Currency.INR)));
-        Wallet anotherWallet = spy(new Wallet(new Money()));
+        Long walletId = 1L;
+        Long anotherWalletId = 2L;
+        Wallet wallet = spy(new Wallet(new Money(300, Currency.INR), user));
+        Wallet anotherWallet = spy(new Wallet(new Money(), anotherUser));
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(100, Currency.INR);
+        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(anotherUser));
-        when(user.getWallet()).thenReturn(wallet);
-        when(anotherUser.getWallet()).thenReturn(anotherWallet);
-        ResponseEntity<ApiResponse> response = transactionService.transact("user", transactionAmount);
+        when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByIdAndUser(anotherWalletId, user)).thenReturn(Optional.of(anotherWallet));
+        ResponseEntity<ApiResponse> response = transactionService.transact(request);
 
         verify(wallet, times(1)).withdraw(transactionAmount);
         verify(wallet, never()).deposit(transactionAmount);
@@ -91,19 +98,20 @@ public class TransactionServiceTest {
     @Test
     void test_transactionNotCompleteWhenUserNotFound_throwsException() {
         User user = mock(User.class);
-        Wallet wallet = spy(new Wallet(new Money(300, Currency.INR)));
-        Wallet anotherWallet = spy(new Wallet(new Money()));
+        Wallet wallet = spy(new Wallet(new Money(300, Currency.INR), user));
+        Wallet anotherWallet = spy(new Wallet(new Money(), mock(User.class)));
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(100, Currency.INR);
+        TransactionRequest request = new TransactionRequest("user", 1L, 2L, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
         when(userRepository.findByUsername(anyString())).thenThrow(new UserNotFoundException());
 
         assertThrows(UserNotFoundException.class, () -> {
-            ResponseEntity<ApiResponse> response = transactionService.transact("user", transactionAmount);
+            ResponseEntity<ApiResponse> response = transactionService.transact(request);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("user not found", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
@@ -117,45 +125,27 @@ public class TransactionServiceTest {
     }
 
     @Test
-    void test_transactionNotCompleteWhenUserTriesToTransactWithSelf_throwsException() {
-        User user = mock(User.class);
-        SecurityContext securityContext = mock(SecurityContext.class);
-        SecurityContextHolder.setContext(securityContext);
-        Authentication authentication = mock(Authentication.class);
-        Money transactionAmount = new Money(100, Currency.INR);
-
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
-
-        assertThrows(TransactionForSameUserException.class, () -> {
-            ResponseEntity<ApiResponse> response = transactionService.transact("user", transactionAmount);
-
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertEquals("transaction with self", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
-        });
-        verify(transactionRepository, never()).saveAll(any(List.class));
-    }
-
-    @Test
     void test_transactionNotCompleteWhenInsufficientFunds_throwsException() {
         User user = mock(User.class);
         User anotherUser = mock(User.class);
-        Wallet wallet = spy(new Wallet(new Money(30, Currency.INR)));
-        Wallet anotherWallet = spy(new Wallet(new Money()));
+        Long walletId = 1L;
+        Long anotherWalletId = 2L;
+        Wallet wallet = spy(new Wallet(new Money(30, Currency.INR), user));
+        Wallet anotherWallet = spy(new Wallet(new Money(), anotherUser));
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(100, Currency.INR);
+        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(anotherUser));
-        when(user.getWallet()).thenReturn(wallet);
-        when(anotherUser.getWallet()).thenReturn(anotherWallet);
+        when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByIdAndUser(anotherWalletId, user)).thenReturn(Optional.of(anotherWallet));
 
         assertThrows(OverWithdrawalException.class, () -> {
-            ResponseEntity<ApiResponse> response = transactionService.transact("user", transactionAmount);
+            ResponseEntity<ApiResponse> response = transactionService.transact(request);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("Over withdrawal", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
@@ -172,21 +162,24 @@ public class TransactionServiceTest {
     void test_transactionNotCompleteWhenInvalidAmountIsTransacted_throwsException() {
         User user = mock(User.class);
         User anotherUser = mock(User.class);
-        Wallet wallet = spy(new Wallet(new Money(30, Currency.INR)));
-        Wallet anotherWallet = spy(new Wallet(new Money()));
+        Long walletId = 1L;
+        Long anotherWalletId = 2L;
+        Wallet wallet = spy(new Wallet(new Money(30, Currency.INR), user));
+        Wallet anotherWallet = spy(new Wallet(new Money(), anotherUser));
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(-6, Currency.INR);
+        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(anotherUser));
-        when(user.getWallet()).thenReturn(wallet);
-        when(anotherUser.getWallet()).thenReturn(anotherWallet);
+        when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByIdAndUser(anotherWalletId, user)).thenReturn(Optional.of(anotherWallet));
 
         assertThrows(InvalidAmountException.class, () -> {
-            ResponseEntity<ApiResponse> response = transactionService.transact("user", transactionAmount);
+            ResponseEntity<ApiResponse> response = transactionService.transact(request);
             
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("Invalid amount", Objects.requireNonNull(response.getBody()).getDeveloperMessage());

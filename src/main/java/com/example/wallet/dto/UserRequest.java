@@ -1,5 +1,6 @@
 package com.example.wallet.dto;
 
+import com.example.wallet.enums.Location;
 import com.example.wallet.enums.Role;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -16,5 +17,6 @@ public class UserRequest {
     private String name;
     private String username;
     private String password;
+    private Location location;
     private Role role;
 }

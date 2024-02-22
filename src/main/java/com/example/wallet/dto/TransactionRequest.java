@@ -9,5 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TransactionRequest {
     private String receiver;
+    private Long sendingWalletId;
+    private Long receivingWalletId;
     private Money money;
 }

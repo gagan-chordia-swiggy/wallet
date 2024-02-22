@@ -7,6 +7,7 @@ import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
 
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
+import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
 import com.example.wallet.repository.UserRepository;
@@ -27,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,6 +39,9 @@ public class WalletServiceTest {
     @Mock
     private WalletRepository walletRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private WalletService walletService;
 
@@ -46,8 +51,59 @@ public class WalletServiceTest {
     }
 
     @Test
-    void test_amountDeposited() throws UnauthorizedWalletAccessException {
+    void test_walletIsCreatedWithoutAuthenticatedUser_successfully() {
         User user = mock(User.class);
+        Wallet wallet = new Wallet(user);
+
+        when(walletRepository.save(wallet)).thenReturn(wallet);
+        ResponseEntity<ApiResponse> response = walletService.create(user);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("wallet created", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        verify(walletRepository, times(1)).save(wallet);
+    }
+
+    @Test
+    void test_newWalletCreatedForAuthenticatedUser_successfully() {
+        User user = mock(User.class);
+        Wallet wallet = new Wallet(user);
+        SecurityContext context = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(context);
+        Authentication authentication = mock(Authentication.class);
+
+        when(context.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(walletRepository.save(wallet)).thenReturn(wallet);
+        ResponseEntity<ApiResponse> response = walletService.create();
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("wallet created", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        verify(walletRepository, times(1)).save(wallet);
+    }
+
+    @Test
+    void test_noNewWalletCreatedForRegisteredUserButUnauthenticated_throwsException() {
+        SecurityContext context = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(context);
+        Authentication authentication = mock(Authentication.class);
+
+        when(context.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(null);
+        when(userRepository.findByUsername(null)).thenThrow(new UserNotFoundException());
+
+        assertThrows(UserNotFoundException.class, () -> {
+            ResponseEntity<ApiResponse> response = walletService.create();
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("user not found", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        });
+    }
+
+    @Test
+    void test_amountDeposited_successfully() {
+        User user = mock(User.class);
+        Long walletId = 1L;
         Wallet wallet = mock(Wallet.class);
         SecurityContext context = mock(SecurityContext.class);
         SecurityContextHolder.setContext(context);
@@ -55,9 +111,9 @@ public class WalletServiceTest {
 
         when(context.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
-        when(user.getWallet()).thenReturn(wallet);
+        when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(wallet.getId()).thenReturn(1L);
-        ResponseEntity<ApiResponse> response = walletService.deposit(1L, new Money(10, Currency.INR));
+        ResponseEntity<ApiResponse> response = walletService.deposit(walletId, new Money(10, Currency.INR));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("Amount deposited", Objects.requireNonNull(response.getBody()).getMessage());
@@ -67,14 +123,15 @@ public class WalletServiceTest {
     void test_invalidAmountDeposited_throwsException() {
         assertThrows(InvalidAmountException.class, () -> {
             User user = mock(User.class);
-            Wallet wallet = spy(new Wallet(new Money()));
+            Long walletId = 1L;
+            Wallet wallet = spy(new Wallet(new Money(), user));
             SecurityContext context = mock(SecurityContext.class);
             SecurityContextHolder.setContext(context);
             Authentication authentication = mock(Authentication.class);
 
             when(context.getAuthentication()).thenReturn(authentication);
             when(authentication.getPrincipal()).thenReturn(user);
-            when(user.getWallet()).thenReturn(wallet);
+            when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
             when(wallet.getId()).thenReturn(1L);
             ResponseEntity<ApiResponse> response = walletService.deposit(1L, new Money(-2, Currency.INR));
 
@@ -88,18 +145,18 @@ public class WalletServiceTest {
 
     @Test
     void test_depositInUnauthorizedWallet_throwsException() {
-        assertThrows(UnauthorizedWalletAccessException.class, () -> {
-            User user = mock(User.class);
-            Wallet wallet = spy(new Wallet(new Money()));
-            SecurityContext context = mock(SecurityContext.class);
-            SecurityContextHolder.setContext(context);
-            Authentication authentication = mock(Authentication.class);
+        User user = mock(User.class);
+        Long walletId = 1L;
+        SecurityContext context = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(context);
+        Authentication authentication = mock(Authentication.class);
 
-            when(context.getAuthentication()).thenReturn(authentication);
-            when(authentication.getPrincipal()).thenReturn(user);
-            when(user.getWallet()).thenReturn(wallet);
-            when(wallet.getId()).thenReturn(2L);
-            ResponseEntity<ApiResponse> response = walletService.deposit(1L, new Money(-2, Currency.INR));
+        when(context.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(walletRepository.findByIdAndUser(walletId, user)).thenThrow(new UnauthorizedWalletAccessException());
+
+        assertThrows(UnauthorizedWalletAccessException.class, () -> {
+            ResponseEntity<ApiResponse> response = walletService.deposit(walletId, new Money(5, Currency.INR));
 
             assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
             assertEquals(
@@ -111,17 +168,17 @@ public class WalletServiceTest {
 
     @Test
     void test_amountWithdrawn() throws UnauthorizedWalletAccessException {
-        Wallet wallet = spy(new Wallet(new Money()));
-        wallet.deposit(new Money(20, Currency.INR));
         User user = mock(User.class);
+        Long walletId = 1L;
+        Wallet wallet = spy(new Wallet(new Money(), user));
+        wallet.deposit(new Money(20, Currency.INR));
         SecurityContext context = mock(SecurityContext.class);
         SecurityContextHolder.setContext(context);
         Authentication authentication = mock(Authentication.class);
 
         when(context.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
-        when(user.getWallet()).thenReturn(wallet);
-        when(wallet.getId()).thenReturn(1L);
+        when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(10, Currency.INR));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -132,16 +189,16 @@ public class WalletServiceTest {
     void test_invalidAmountWithdrawn_throwsException() {
         assertThrows(InvalidAmountException.class, () -> {
             User user = mock(User.class);
-            Wallet wallet = spy(new Wallet(new Money()));
+            Long walletId = 1L;
+            Wallet wallet = spy(new Wallet(new Money(), user));
             SecurityContext context = mock(SecurityContext.class);
             SecurityContextHolder.setContext(context);
             Authentication authentication = mock(Authentication.class);
 
             when(context.getAuthentication()).thenReturn(authentication);
             when(authentication.getPrincipal()).thenReturn(user);
-            when(user.getWallet()).thenReturn(wallet);
-            when(wallet.getId()).thenReturn(1L);
-            ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(-2, Currency.INR));
+            when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
+            ResponseEntity<ApiResponse> response = walletService.withdraw(walletId, new Money(-2, Currency.INR));
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals(
@@ -155,16 +212,16 @@ public class WalletServiceTest {
     void test_OverWithdrawal_throwsException() {
         assertThrows(OverWithdrawalException.class, () -> {
             User user = mock(User.class);
-            Wallet wallet = spy(new Wallet(new Money(0, Currency.INR)));
+            Long walletId = 1L;
+            Wallet wallet = spy(new Wallet(new Money(0, Currency.INR), user));
             SecurityContext context = mock(SecurityContext.class);
             SecurityContextHolder.setContext(context);
             Authentication authentication = mock(Authentication.class);
 
             when(context.getAuthentication()).thenReturn(authentication);
             when(authentication.getPrincipal()).thenReturn(user);
-            when(user.getWallet()).thenReturn(wallet);
-            when(wallet.getId()).thenReturn(1L);
-            ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(40, Currency.INR));
+            when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
+            ResponseEntity<ApiResponse> response = walletService.withdraw(walletId, new Money(40, Currency.INR));
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals(
@@ -178,15 +235,15 @@ public class WalletServiceTest {
     void test_withdrawFromInUnauthorizedWallet_throwsException() {
         assertThrows(UnauthorizedWalletAccessException.class, () -> {
             User user = mock(User.class);
-            Wallet wallet = spy(new Wallet(new Money()));
+            Long walletId = 2L;
+            Wallet wallet = spy(new Wallet(new Money(), user));
             SecurityContext context = mock(SecurityContext.class);
             SecurityContextHolder.setContext(context);
             Authentication authentication = mock(Authentication.class);
 
             when(context.getAuthentication()).thenReturn(authentication);
             when(authentication.getPrincipal()).thenReturn(user);
-            when(user.getWallet()).thenReturn(wallet);
-            when(wallet.getId()).thenReturn(2L);
+            when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
             ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(-2, Currency.INR));
 
             assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());

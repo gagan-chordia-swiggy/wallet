@@ -8,6 +8,7 @@ import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
 
+import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -19,25 +20,42 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class WalletService {
     private final WalletRepository walletRepository;
+    private final UserRepository userRepository;
 
-    public ResponseEntity<ApiResponse> deposit(Long walletId, Money moneyRequest) throws UnauthorizedWalletAccessException {
+    public ResponseEntity<ApiResponse> create(User user) {
+        Wallet wallet = new Wallet(user);
+        walletRepository.save(wallet);
+        ApiResponse response = ApiResponse.builder()
+                .message("New wallet created")
+                .developerMessage("wallet created")
+                .status(HttpStatus.CREATED)
+                .statusCode(HttpStatus.CREATED.value())
+                .data(Map.of("wallet", new WalletResponse(wallet)))
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    public ResponseEntity<ApiResponse> create() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+
+        return this.create(user);
+    }
+
+    public ResponseEntity<ApiResponse> deposit(Long walletId, Money moneyRequest) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user == null) {
             throw new UserNotFoundException();
         }
 
-        Wallet wallet = user.getWallet();
-
-        if (!Objects.equals(wallet.getId(), walletId)) {
-            throw new UnauthorizedWalletAccessException();
-        }
+        Wallet wallet = walletRepository.findByIdAndUser(walletId, user).orElseThrow(UnauthorizedWalletAccessException::new);
 
         wallet.deposit(moneyRequest);
 
@@ -54,18 +72,14 @@ public class WalletService {
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<ApiResponse> withdraw(Long walletId, Money request) throws UnauthorizedWalletAccessException {
+    public ResponseEntity<ApiResponse> withdraw(Long walletId, Money request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user == null) {
             throw new UserNotFoundException();
         }
 
-        Wallet wallet = user.getWallet();
-
-        if (!Objects.equals(wallet.getId(), walletId)) {
-            throw new UnauthorizedWalletAccessException();
-        }
+        Wallet wallet = walletRepository.findByIdAndUser(walletId, user).orElseThrow(UnauthorizedWalletAccessException::new);
 
         wallet.withdraw(request);
 

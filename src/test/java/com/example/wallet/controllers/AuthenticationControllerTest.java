@@ -1,6 +1,7 @@
 package com.example.wallet.controllers;
 
 import com.example.wallet.dto.UserRequest;
+import com.example.wallet.enums.Location;
 import com.example.wallet.enums.Role;
 import com.example.wallet.exceptions.InvalidCredentialsException;
 import com.example.wallet.exceptions.MissingCredentialsException;
@@ -51,6 +52,7 @@ public class AuthenticationControllerTest {
                 .name("name")
                 .username("uname")
                 .password("password")
+                .location(Location.INDIA)
                 .role(Role.USER)
                 .build();
         String request = objectMapper.writeValueAsString(userRequest);

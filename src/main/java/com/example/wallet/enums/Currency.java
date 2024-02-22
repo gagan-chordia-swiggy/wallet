@@ -1,5 +1,7 @@
 package com.example.wallet.enums;
 
 public enum Currency {
-    INR
+    INR,
+    USD,
+    GBP
 }

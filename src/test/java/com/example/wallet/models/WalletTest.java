@@ -8,11 +8,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 public class WalletTest {
     @Test
     void test_depositAmountToWallet() {
-        Wallet wallet = new Wallet();
+        User user = mock(User.class);
+        Wallet wallet = new Wallet(user);
 
         wallet.deposit(new Money(25, Currency.INR));
 
@@ -28,7 +30,8 @@ public class WalletTest {
 
     @Test
     void test_withdrawingAmountFromWallet() {
-        Wallet wallet = new Wallet();
+        User user = mock(User.class);
+        Wallet wallet = new Wallet(user);
 
         wallet.deposit(new Money(100, Currency.INR));
         wallet.withdraw(new Money(15, Currency.INR));
@@ -45,7 +48,8 @@ public class WalletTest {
 
     @Test
     void test_withdrawingMoreThanBalance_throwsException() {
-        Wallet wallet = new Wallet();
+        User user = mock(User.class);
+        Wallet wallet = new Wallet(user);
         wallet.deposit(new Money(10, Currency.INR));
 
         assertThrows(OverWithdrawalException.class, () -> wallet.withdraw(new Money(30, Currency.INR)));

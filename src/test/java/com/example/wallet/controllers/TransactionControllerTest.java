@@ -48,76 +48,76 @@ class TransactionControllerTest {
     @Test
     void test_transactionIsComplete() throws Exception {
         Money money = new Money(50, Currency.INR);
-        TransactionRequest transaction = new TransactionRequest("user", money);
+        TransactionRequest transaction = new TransactionRequest("user", 1L, 2L, money);
         String request = mapper.writeValueAsString(transaction);
 
-        when(transactionService.transact("user", money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        when(transactionService.transact(transaction)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
         mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
-        verify(transactionService, times(1)).transact("user", money);
+        verify(transactionService, times(1)).transact(transaction);
     }
 
     @Test
     void test_transactionNotCompleteWhenUserNotFound_throwsException() throws Exception {
         Money money = new Money(50, Currency.INR);
-        TransactionRequest transaction = new TransactionRequest("user", money);
+        TransactionRequest transaction = new TransactionRequest("user", 1L, 2L, money);
         String request = mapper.writeValueAsString(transaction);
 
-        when(transactionService.transact("user", money)).thenThrow(new UserNotFoundException());
+        when(transactionService.transact(transaction)).thenThrow(new UserNotFoundException());
 
         mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
-        verify(transactionService, times(1)).transact("user", money);
+        verify(transactionService, times(1)).transact(transaction);
     }
 
     @Test
     void test_transactionNotCompleteWhenInsufficientFunds_throwsException() throws Exception {
         Money money = new Money(50, Currency.INR);
-        TransactionRequest transaction = new TransactionRequest("user", money);
+        TransactionRequest transaction = new TransactionRequest("user", 1L, 2L, money);
         String request = mapper.writeValueAsString(transaction);
 
-        when(transactionService.transact("user", money)).thenThrow(new OverWithdrawalException());
+        when(transactionService.transact(transaction)).thenThrow(new OverWithdrawalException());
 
         mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
-        verify(transactionService, times(1)).transact("user", money);
+        verify(transactionService, times(1)).transact(transaction);
     }
 
     @Test
     void test_transactionNotCompleteWhenInvalidAmountIsTransacted_throwsException() throws Exception {
         Money money = new Money(0, Currency.INR);
-        TransactionRequest transaction = new TransactionRequest("user", money);
+        TransactionRequest transaction = new TransactionRequest("user", 1L, 2L, money);
         String request = mapper.writeValueAsString(transaction);
 
-        when(transactionService.transact("user", money)).thenThrow(new InvalidAmountException());
+        when(transactionService.transact(transaction)).thenThrow(new InvalidAmountException());
 
         mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
-        verify(transactionService, times(1)).transact("user", money);
+        verify(transactionService, times(1)).transact(transaction);
     }
 
     @Test
     void test_transactionNotCompleteWhenUserTriesToTransactWithSelf_throwsException() throws Exception {
         Money money = new Money(0, Currency.INR);
-        TransactionRequest transaction = new TransactionRequest("user", money);
+        TransactionRequest transaction = new TransactionRequest("user", 1L, 2L, money);
         String request = mapper.writeValueAsString(transaction);
 
-        when(transactionService.transact("user", money)).thenThrow(new TransactionForSameUserException());
+        when(transactionService.transact(transaction)).thenThrow(new TransactionForSameUserException());
 
         mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
-        verify(transactionService, times(1)).transact("user", money);
+        verify(transactionService, times(1)).transact(transaction);
     }
 
     @Test

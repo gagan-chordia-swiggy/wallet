@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,9 +29,11 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final WalletService walletService;
 
     public ResponseEntity<ApiResponse> register(UserRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+        if (existingUser.isPresent()) {
             throw new UserAlreadyExistsException();
         }
 
@@ -38,9 +41,11 @@ public class AuthenticationService {
                 .name(request.getName())
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .location(request.getLocation())
                 .role(request.getRole())
                 .build();
 
+        walletService.create(user);
         userRepository.save(user);
 
         ApiResponse response = ApiResponse.builder()

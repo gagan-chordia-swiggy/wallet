@@ -2,6 +2,8 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.UserRequest;
+import com.example.wallet.exceptions.InvalidCredentialsException;
+import com.example.wallet.exceptions.MissingCredentialsException;
 import com.example.wallet.exceptions.UserAlreadyExistsException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -55,12 +58,19 @@ public class AuthenticationService {
         String username = request.getUsername();
         String password = request.getPassword();
 
-        authManager.authenticate(
+        if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+            throw new MissingCredentialsException();
+        }
+
+        Authentication authentication = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password)
         );
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(UserNotFoundException::new);
+        User user = (User) authentication.getPrincipal();
+
+        if (user == null) {
+            throw new InvalidCredentialsException();
+        }
 
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);

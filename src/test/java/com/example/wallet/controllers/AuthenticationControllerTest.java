@@ -56,7 +56,7 @@ public class AuthenticationControllerTest {
 
         when(authenticationService.register(userRequest)).thenReturn(new ResponseEntity<>(HttpStatus.CREATED));
 
-        mockMvc.perform(post("/api/v1/users/auth/register")
+        mockMvc.perform(post("/api/v1/users")
                 .content(request)
                 .contentType("application/json")
         ).andExpect(status().isCreated());
@@ -75,7 +75,7 @@ public class AuthenticationControllerTest {
 
         when(authenticationService.register(userRequest)).thenThrow(new UserAlreadyExistsException());
 
-        mockMvc.perform(post("/api/v1/users/auth/register")
+        mockMvc.perform(post("/api/v1/users")
                 .content(request)
                 .contentType("application/json")
         ).andExpect(status().isBadRequest());
@@ -92,7 +92,7 @@ public class AuthenticationControllerTest {
 
         when(authenticationService.login(userRequest)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        mockMvc.perform(post("/api/v1/users/auth/login")
+        mockMvc.perform(post("/api/v1/users/auth")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
@@ -109,7 +109,7 @@ public class AuthenticationControllerTest {
 
         when(authenticationService.login(userRequest)).thenThrow(new InvalidCredentialsException());
 
-        mockMvc.perform(post("/api/v1/users/auth/login")
+        mockMvc.perform(post("/api/v1/users/auth")
                 .content(request)
                 .contentType("application/json")
         ).andExpect(status().isBadRequest());

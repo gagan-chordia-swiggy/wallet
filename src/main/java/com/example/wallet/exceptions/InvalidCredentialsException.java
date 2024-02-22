@@ -1,9 +1,7 @@
 package com.example.wallet.exceptions;
 
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-
-public class InvalidCredentialsException extends AuthenticationCredentialsNotFoundException {
+public class InvalidCredentialsException extends IllegalArgumentException {
     public InvalidCredentialsException() {
-        super("Wrong credentials");
+        super();
     }
 }

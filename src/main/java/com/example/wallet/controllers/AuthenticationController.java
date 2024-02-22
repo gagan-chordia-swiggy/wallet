@@ -12,17 +12,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/users/auth")
+@RequestMapping("/api/v1/users")
 public class AuthenticationController {
     @Autowired
     private AuthenticationService authService;
 
-    @PostMapping("/register")
+    @PostMapping
     public ResponseEntity<ApiResponse> register(@RequestBody UserRequest request) {
         return this.authService.register(request);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/auth")
     public ResponseEntity<ApiResponse> login(@RequestBody UserRequest request) {
         return this.authService.login(request);
     }

@@ -4,16 +4,21 @@ import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.UserRequest;
 import com.example.wallet.enums.Role;
 import com.example.wallet.exceptions.InvalidCredentialsException;
+import com.example.wallet.exceptions.MissingCredentialsException;
 import com.example.wallet.exceptions.UserAlreadyExistsException;
 import com.example.wallet.models.User;
 import com.example.wallet.repository.UserRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Objects;
@@ -21,8 +26,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 public class AuthenticationServiceTest {
@@ -97,9 +104,10 @@ public class AuthenticationServiceTest {
                 .password(request.getPassword())
                 .role(null)
                 .build();
+        Authentication authentication = mock(Authentication.class);
 
-        when(authenticationManager.authenticate(any())).thenReturn(null);
-        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.of(user));
+        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(user);
         when(jwtService.generateToken(user)).thenReturn("access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
         ResponseEntity<ApiResponse> response = authService.login(request);
@@ -111,19 +119,46 @@ public class AuthenticationServiceTest {
     @Test
     void test_loginUserWithWrongCredentials_throwsException() {
         UserRequest request = UserRequest.builder()
-                .name(null)
                 .username("uname")
                 .password("password")
-                .role(null)
                 .build();
+        Authentication authentication = mock(Authentication.class);
 
-        when(authenticationManager.authenticate(any())).thenThrow(new InvalidCredentialsException());
+        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(null);
 
         assertThrows(InvalidCredentialsException.class, () -> {
             ResponseEntity<ApiResponse> response = authService.login(request);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("invalid credentials", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        });
+    }
+
+    @Test
+    void test_noCredentialsWhileLogin_throwsException() {
+        UserRequest request = UserRequest.builder().build();
+
+        assertThrows(MissingCredentialsException.class, () -> {
+            ResponseEntity<ApiResponse> response = authService.login(request);
+
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+            assertEquals("missing credentials", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        });
+    }
+
+    @Test
+    void test_blankCredentialsWhileLogin_throwsException() {
+        UserRequest request = UserRequest.builder()
+                .username("")
+                .password("")
+                .build();
+
+        assertThrows(MissingCredentialsException.class, () -> {
+            ResponseEntity<ApiResponse> response = authService.login(request);
+
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+            assertEquals("missing credentials", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
         });
     }
 }

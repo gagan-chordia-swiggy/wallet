@@ -2,6 +2,7 @@ package com.example.wallet.controllers;
 
 import com.example.wallet.dto.Money;
 import com.example.wallet.enums.Currency;
+import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.models.User;
 import com.example.wallet.services.WalletService;
 
@@ -47,13 +48,13 @@ public class WalletControllerTest {
         Money money = new Money(10, Currency.INR);
         String request = objectMapper.writeValueAsString(money);
 
-        when(walletService.deposit(money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        when(walletService.deposit(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        mockMvc.perform(patch("/api/v1/wallets/deposit")
+        mockMvc.perform(patch("/api/v1/users/wallets/1/deposit")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
-        verify(walletService, times(1)).deposit(money);
+        verify(walletService, times(1)).deposit(1L, money);
     }
 
     @Test
@@ -61,9 +62,9 @@ public class WalletControllerTest {
         Money money = new Money(10, Currency.INR);
         String request = objectMapper.writeValueAsString(money);
 
-        when(walletService.deposit(money)).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
+        when(walletService.deposit(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
 
-        mockMvc.perform(patch("/api/v1/wallets/deposit")
+        mockMvc.perform(patch("/api/v1/users/wallets/1/deposit")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isUnauthorized());
@@ -75,13 +76,28 @@ public class WalletControllerTest {
         Money money = new Money(0, Currency.INR);
         String request = objectMapper.writeValueAsString(money);
 
-        when(walletService.deposit(money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+        when(walletService.deposit(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
-        mockMvc.perform(patch("/api/v1/wallets/deposit")
+        mockMvc.perform(patch("/api/v1/users/wallets/1/deposit")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
-        verify(walletService, times(1)).deposit(money);
+        verify(walletService, times(1)).deposit(1L, money);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void test_depositInUnauthorizedWallet_throwsException() throws Exception {
+        Money money = new Money(0, Currency.INR);
+        String request = objectMapper.writeValueAsString(money);
+
+        when(walletService.deposit(1L, money)).thenThrow(new UnauthorizedWalletAccessException());
+
+        mockMvc.perform(patch("/api/v1/users/wallets/1/deposit")
+                .contentType("application/json")
+                .content(request)
+        ).andExpect(status().isUnauthorized());
+        verify(walletService, times(1)).deposit(1L, money);
     }
 
     @Test
@@ -90,13 +106,13 @@ public class WalletControllerTest {
         Money money = new Money(5, Currency.INR);
         String request = objectMapper.writeValueAsString(money);
 
-        when(walletService.withdraw(money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        this.mockMvc.perform(patch("/api/v1/wallets/withdraw")
+        this.mockMvc.perform(patch("/api/v1/users/wallets/1/withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
-        verify(walletService, times(1)).withdraw(money);
+        verify(walletService, times(1)).withdraw(1L, money);
     }
 
     @Test
@@ -104,9 +120,9 @@ public class WalletControllerTest {
         Money money = new Money(5, Currency.INR);
         String request = objectMapper.writeValueAsString(money);
 
-        when(walletService.withdraw(money)).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
+        when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
 
-        this.mockMvc.perform(patch("/api/v1/wallets/withdraw")
+        this.mockMvc.perform(patch("/api/v1/users/wallets/1/withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isUnauthorized());
@@ -118,14 +134,14 @@ public class WalletControllerTest {
         Money money = new Money(0, Currency.INR);
         String request = objectMapper.writeValueAsString(money);
 
-        when(walletService.withdraw(money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+        when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
-        mockMvc.perform(patch("/api/v1/wallets/withdraw")
+        mockMvc.perform(patch("/api/v1/users/wallets/1/withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
 
-        verify(walletService, times(1)).withdraw(money);
+        verify(walletService, times(1)).withdraw(1L, money);
     }
 
     @Test
@@ -134,21 +150,21 @@ public class WalletControllerTest {
         Money money = new Money(15, Currency.INR);
         String request = objectMapper.writeValueAsString(money);
 
-        when(walletService.withdraw(money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+        when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
-        mockMvc.perform(patch("/api/v1/wallets/withdraw")
+        mockMvc.perform(patch("/api/v1/users/wallets/1/withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
-        verify(walletService, times(1)).withdraw(money);
+        verify(walletService, times(1)).withdraw(1L, money);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     void test_FetchAllWalletsSuccessfully() throws Exception {
-        when(walletService.getWallets()).thenReturn(new ResponseEntity<>(HttpStatus.FOUND));
+        when(walletService.getWallets()).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        mockMvc.perform(get("/api/v1/wallets")).andExpect(status().isFound());
+        mockMvc.perform(get("/api/v1/users/wallets")).andExpect(status().isOk());
         verify(walletService, times(1)).getWallets();
     }
 
@@ -156,6 +172,6 @@ public class WalletControllerTest {
     void test_FetchAllWalletsWithUnauthorizedUser() throws Exception {
         when(walletService.getWallets()).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
 
-        mockMvc.perform(get("/api/v1/wallets")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/users/wallets")).andExpect(status().isUnauthorized());
     }
 }

@@ -2,6 +2,7 @@ package com.example.wallet.controllers;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
+import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.services.WalletService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,21 +14,21 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/wallets")
+@RequestMapping("/api/v1/users/wallets")
 public class WalletController {
     @Autowired
     private WalletService walletService;
 
-    @PatchMapping("/deposit")
+    @PatchMapping("/{walletId}/deposit")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse> deposit(@RequestBody Money moneyRequest) {
-        return this.walletService.deposit(moneyRequest);
+    public ResponseEntity<ApiResponse> deposit(@PathVariable(value = "walletId") Long id, @RequestBody Money moneyRequest) throws UnauthorizedWalletAccessException {
+        return this.walletService.deposit(id, moneyRequest);
     }
 
-    @PatchMapping("/withdraw")
+    @PatchMapping("/{walletId}/withdraw")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse> withdraw(@RequestBody Money request) {
-        return this.walletService.withdraw(request);
+    public ResponseEntity<ApiResponse> withdraw(@PathVariable(value = "walletId") Long id, @RequestBody Money request) throws UnauthorizedWalletAccessException {
+        return this.walletService.withdraw(id, request);
     }
 
     @GetMapping

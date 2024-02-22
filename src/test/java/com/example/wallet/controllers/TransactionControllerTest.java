@@ -1,9 +1,11 @@
 package com.example.wallet.controllers;
 
 import com.example.wallet.dto.Money;
+import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.enums.Currency;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
+import com.example.wallet.exceptions.TransactionNotFoundException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.services.TransactionService;
 
@@ -25,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,11 +51,12 @@ class TransactionControllerTest {
     @Test
     void test_transactionIsComplete() throws Exception {
         Money money = new Money(50, Currency.INR);
-        String request = mapper.writeValueAsString(money);
+        TransactionRequest transaction = new TransactionRequest("user", money);
+        String request = mapper.writeValueAsString(transaction);
 
         when(transactionService.transact("user", money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        mockMvc.perform(patch("/api/v1/users/transactions/user")
+        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
@@ -62,11 +66,12 @@ class TransactionControllerTest {
     @Test
     void test_transactionNotCompleteWhenUserNotFound_throwsException() throws Exception {
         Money money = new Money(50, Currency.INR);
-        String request = mapper.writeValueAsString(money);
+        TransactionRequest transaction = new TransactionRequest("user", money);
+        String request = mapper.writeValueAsString(transaction);
 
         when(transactionService.transact("user", money)).thenThrow(new UserNotFoundException());
 
-        mockMvc.perform(patch("/api/v1/users/transactions/user")
+        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -76,11 +81,12 @@ class TransactionControllerTest {
     @Test
     void test_transactionNotCompleteWhenInsufficientFunds_throwsException() throws Exception {
         Money money = new Money(50, Currency.INR);
-        String request = mapper.writeValueAsString(money);
+        TransactionRequest transaction = new TransactionRequest("user", money);
+        String request = mapper.writeValueAsString(transaction);
 
         when(transactionService.transact("user", money)).thenThrow(new OverWithdrawalException());
 
-        mockMvc.perform(patch("/api/v1/users/transactions/user")
+        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -90,14 +96,61 @@ class TransactionControllerTest {
     @Test
     void test_transactionNotCompleteWhenInvalidAmountIsTransacted_throwsException() throws Exception {
         Money money = new Money(0, Currency.INR);
-        String request = mapper.writeValueAsString(money);
+        TransactionRequest transaction = new TransactionRequest("user", money);
+        String request = mapper.writeValueAsString(transaction);
 
         when(transactionService.transact("user", money)).thenThrow(new InvalidAmountException());
 
-        mockMvc.perform(patch("/api/v1/users/transactions/user")
+        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
         verify(transactionService, times(1)).transact("user", money);
+    }
+
+    @Test
+    void test_fetchAllTransactionsSuccessfully() throws Exception {
+        when((transactionService.fetch())).thenReturn(new ResponseEntity<>(HttpStatus.FOUND));
+
+        mockMvc.perform(get("/api/v1/users/wallets/transactions/")).andExpect(status().isFound());
+        verify(transactionService, times(1)).fetch();
+    }
+
+    @Test
+    void test_unknownUserWhileFetchingTransactions_isBadRequest() throws Exception {
+        when(transactionService.fetch()).thenThrow(new UserNotFoundException());
+
+        mockMvc.perform(get("/api/v1/users/wallets/transactions/")).andExpect(status().isBadRequest());
+        verify(transactionService, times(1)).fetch();
+    }
+
+    @Test
+    void test_fetchTransactionOfAUserWithSpecificTimestampSuccessfully() throws Exception {
+        Long timestamp = System.currentTimeMillis();
+
+        when(transactionService.fetchByTimestamp(timestamp)).thenReturn(new ResponseEntity<>(HttpStatus.FOUND));
+
+        mockMvc.perform(get("/api/v1/users/wallets/transactions?timestamp=" + timestamp)).andExpect(status().isFound());
+        verify(transactionService, times(1)).fetchByTimestamp(timestamp);
+    }
+
+    @Test
+    void test_unknownUserWhileFetchingWithTimestamp_throwsException() throws Exception {
+        Long timestamp = System.currentTimeMillis();
+
+        when(transactionService.fetchByTimestamp(timestamp)).thenThrow(new UserNotFoundException());
+
+        mockMvc.perform(get("/api/v1/users/wallets/transactions?timestamp=" + timestamp)).andExpect(status().isBadRequest());
+        verify(transactionService, times(1)).fetchByTimestamp(timestamp);
+    }
+
+    @Test
+    void test_transactionNotFoundForSpecificTimestamp_throwsException() throws Exception {
+        Long timestamp = System.currentTimeMillis();
+
+        when(transactionService.fetchByTimestamp(timestamp)).thenThrow(new TransactionNotFoundException());
+
+        mockMvc.perform(get("/api/v1/users/wallets/transactions?timestamp=" + timestamp)).andExpect(status().isNotFound());
+        verify(transactionService, times(1)).fetchByTimestamp(timestamp);
     }
 }

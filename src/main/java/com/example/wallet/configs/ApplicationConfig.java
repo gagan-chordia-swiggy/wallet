@@ -1,5 +1,6 @@
 package com.example.wallet.configs;
 
+import com.example.wallet.exceptions.InvalidCredentialsException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.repository.UserRepository;
 
@@ -23,7 +24,7 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByUsername(username)
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(InvalidCredentialsException::new);
     }
 
     @Bean

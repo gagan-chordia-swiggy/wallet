@@ -3,6 +3,7 @@ package com.example.wallet.controllers;
 import com.example.wallet.dto.UserRequest;
 import com.example.wallet.enums.Role;
 import com.example.wallet.exceptions.InvalidCredentialsException;
+import com.example.wallet.exceptions.MissingCredentialsException;
 import com.example.wallet.exceptions.UserAlreadyExistsException;
 import com.example.wallet.services.AuthenticationService;
 
@@ -96,6 +97,20 @@ public class AuthenticationControllerTest {
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
+        verify(authenticationService, times(1)).login(userRequest);
+    }
+
+    @Test
+    void test_blankCredentialsWhileLogin_throwsException() throws Exception {
+        UserRequest userRequest = UserRequest.builder().build();
+        String request = objectMapper.writeValueAsString(userRequest);
+
+        when(authenticationService.login(userRequest)).thenThrow(new MissingCredentialsException());
+
+        mockMvc.perform(post("/api/v1/users/auth")
+                .contentType("application/json")
+                .content(request)
+        ).andExpect(status().isUnprocessableEntity());
         verify(authenticationService, times(1)).login(userRequest);
     }
 

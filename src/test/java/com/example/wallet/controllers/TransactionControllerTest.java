@@ -3,10 +3,7 @@ package com.example.wallet.controllers;
 import com.example.wallet.dto.Money;
 import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.enums.Currency;
-import com.example.wallet.exceptions.InvalidAmountException;
-import com.example.wallet.exceptions.OverWithdrawalException;
-import com.example.wallet.exceptions.TransactionNotFoundException;
-import com.example.wallet.exceptions.UserNotFoundException;
+import com.example.wallet.exceptions.*;
 import com.example.wallet.services.TransactionService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -100,6 +97,21 @@ class TransactionControllerTest {
         String request = mapper.writeValueAsString(transaction);
 
         when(transactionService.transact("user", money)).thenThrow(new InvalidAmountException());
+
+        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
+                .contentType("application/json")
+                .content(request)
+        ).andExpect(status().isBadRequest());
+        verify(transactionService, times(1)).transact("user", money);
+    }
+
+    @Test
+    void test_transactionNotCompleteWhenUserTriesToTransactWithSelf_throwsException() throws Exception {
+        Money money = new Money(0, Currency.INR);
+        TransactionRequest transaction = new TransactionRequest("user", money);
+        String request = mapper.writeValueAsString(transaction);
+
+        when(transactionService.transact("user", money)).thenThrow(new TransactionForSameUserException());
 
         mockMvc.perform(patch("/api/v1/users/wallets/transactions")
                 .contentType("application/json")

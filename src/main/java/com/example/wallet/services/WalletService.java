@@ -2,6 +2,7 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
+import com.example.wallet.dto.WalletResponse;
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,7 +46,7 @@ public class WalletService {
                 .developerMessage("Amount deposited")
                 .status(HttpStatus.OK)
                 .statusCode(HttpStatus.OK.value())
-                .data(Map.of("wallet", wallet))
+                .data(Map.of("wallet", new WalletResponse(wallet)))
                 .build();
 
         walletRepository.save(wallet);
@@ -72,7 +74,7 @@ public class WalletService {
                 .developerMessage("Amount withdrawn")
                 .status(HttpStatus.OK)
                 .statusCode(HttpStatus.OK.value())
-                .data(Map.of("wallet", wallet))
+                .data(Map.of("wallet", new WalletResponse(wallet)))
                 .build();
 
         walletRepository.save(wallet);
@@ -82,13 +84,18 @@ public class WalletService {
 
     public ResponseEntity<ApiResponse> getWallets() {
         List<Wallet> wallets = walletRepository.findAll();
+        List<WalletResponse> walletResponses = new ArrayList<>();
+
+        for (Wallet wallet: wallets) {
+            walletResponses.add(new WalletResponse(wallet));
+        }
 
         ApiResponse response = ApiResponse.builder()
                 .message("fetched")
                 .developerMessage("fetched")
                 .status(HttpStatus.OK)
                 .statusCode(HttpStatus.OK.value())
-                .data(Map.of("wallets", wallets))
+                .data(Map.of("wallets", walletResponses))
                 .build();
 
         return ResponseEntity.status(response.getStatus()).body(response);

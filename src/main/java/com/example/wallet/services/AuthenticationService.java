@@ -2,10 +2,10 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.UserRequest;
+import com.example.wallet.dto.UserResponse;
 import com.example.wallet.exceptions.InvalidCredentialsException;
 import com.example.wallet.exceptions.MissingCredentialsException;
 import com.example.wallet.exceptions.UserAlreadyExistsException;
-import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;
 import com.example.wallet.repository.UserRepository;
 
@@ -48,7 +48,7 @@ public class AuthenticationService {
                 .developerMessage("user registered")
                 .status(HttpStatus.CREATED)
                 .statusCode(HttpStatus.CREATED.value())
-                .data(Map.of("user", user))
+                .data(Map.of("user", new UserResponse(user)))
                 .build();
 
         return ResponseEntity.status(response.getStatus()).body(response);
@@ -80,7 +80,7 @@ public class AuthenticationService {
                 .developerMessage("logged in")
                 .status(HttpStatus.OK)
                 .statusCode(HttpStatus.OK.value())
-                .data(Map.of("user", user, "access-token", accessToken, "refresh-token", refreshToken))
+                .data(Map.of("user", new UserResponse(user), "access-token", accessToken, "refresh-token", refreshToken))
                 .build();
 
 

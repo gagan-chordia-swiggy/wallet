@@ -92,7 +92,7 @@ public class TransactionService {
         List<TransactionResponse> responses = new ArrayList<>();
 
         for (Transaction transaction : transactions) {
-            responses.add(toDto(transaction));
+            responses.add(new TransactionResponse(transaction));
         }
 
         ApiResponse response = ApiResponse.builder()
@@ -103,7 +103,7 @@ public class TransactionService {
                 .data(Map.of("transactions", responses))
                 .build();
 
-        return ResponseEntity.status(HttpStatus.FOUND).body(response);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     public ResponseEntity<ApiResponse> fetchByTimestamp(Long timestamp) {
@@ -122,20 +122,9 @@ public class TransactionService {
                 .developerMessage("fetched")
                 .status(HttpStatus.OK)
                 .statusCode(HttpStatus.OK.value())
-                .data(Map.of("transactions", toDto(transaction)))
+                .data(Map.of("transactions", new TransactionResponse(transaction)))
                 .build();
 
-        return ResponseEntity.status(HttpStatus.FOUND).body(response);
-    }
-
-    // Helper Methods
-    private TransactionResponse toDto(Transaction transaction) {
-        return TransactionResponse.builder()
-                .transactionId(transaction.getId())
-                .username(transaction.getUser().getUsername())
-                .money(transaction.getMoney())
-                .transactionType(transaction.getType())
-                .timestamp(transaction.getTimestamp())
-                .build();
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

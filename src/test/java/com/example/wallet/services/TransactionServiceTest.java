@@ -219,7 +219,7 @@ public class TransactionServiceTest {
         ResponseEntity<ApiResponse> response = transactionService.fetch();
 
         verify(transactionRepository, times(1)).findAllByUser(user);
-        assertEquals(HttpStatus.FOUND, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("fetched", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }
 
@@ -260,7 +260,7 @@ public class TransactionServiceTest {
         ResponseEntity<ApiResponse> response = transactionService.fetchByTimestamp(timestamp);
 
         verify(transactionRepository, times(1)).findByUserAndTimestamp(user, timestamp);
-        assertEquals(HttpStatus.FOUND, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("fetched", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }
 

@@ -24,4 +24,9 @@ public class Money {
         this.amount = 0;
         this.currency = Currency.INR;
     }
+
+    public Money(Currency currency) {
+        this.amount = 0;
+        this.currency = currency;
+    }
 }

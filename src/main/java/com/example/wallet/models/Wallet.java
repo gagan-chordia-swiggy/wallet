@@ -34,7 +34,7 @@ public class Wallet {
     private User user;
 
     public Wallet(User user) {
-        this.money = new Money();
+        this.money = new Money(user.getLocation().getCurrency());
         this.user = user;
     }
 

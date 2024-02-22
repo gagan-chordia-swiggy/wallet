@@ -2,7 +2,9 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
+import com.example.wallet.dto.WalletResponse;
 import com.example.wallet.enums.Currency;
+import com.example.wallet.enums.Location;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
 
@@ -52,7 +54,9 @@ public class WalletServiceTest {
 
     @Test
     void test_walletIsCreatedWithoutAuthenticatedUser_successfully() {
-        User user = mock(User.class);
+        User user = User.builder()
+                .location(Location.INDIA)
+                .build();
         Wallet wallet = new Wallet(user);
 
         when(walletRepository.save(wallet)).thenReturn(wallet);
@@ -60,12 +64,50 @@ public class WalletServiceTest {
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals("wallet created", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        WalletResponse walletResponse = (WalletResponse) Objects.requireNonNull(response.getBody()).getData().get("wallet");
+        assertEquals(Currency.INR, walletResponse.getMoney().getCurrency());
+        verify(walletRepository, times(1)).save(wallet);
+    }
+
+    @Test
+    void test_walletForUserInUnitedStatesHasDefaultCurrencyUSD() {
+        User user = User.builder()
+                .location(Location.UNITED_STATES)
+                .build();
+        Wallet wallet = new Wallet(user);
+
+        when(walletRepository.save(wallet)).thenReturn(wallet);
+        ResponseEntity<ApiResponse> response = walletService.create(user);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("wallet created", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        WalletResponse walletResponse = (WalletResponse) Objects.requireNonNull(response.getBody()).getData().get("wallet");
+        assertEquals(Currency.USD, walletResponse.getMoney().getCurrency());
+        verify(walletRepository, times(1)).save(wallet);
+    }
+
+    @Test
+    void test_walletForUserInBritainHasDefaultCurrencyGBP() {
+        User user = User.builder()
+                .location(Location.BRITAIN)
+                .build();
+        Wallet wallet = new Wallet(user);
+
+        when(walletRepository.save(wallet)).thenReturn(wallet);
+        ResponseEntity<ApiResponse> response = walletService.create(user);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("wallet created", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        WalletResponse walletResponse = (WalletResponse) Objects.requireNonNull(response.getBody()).getData().get("wallet");
+        assertEquals(Currency.GBP, walletResponse.getMoney().getCurrency());
         verify(walletRepository, times(1)).save(wallet);
     }
 
     @Test
     void test_newWalletCreatedForAuthenticatedUser_successfully() {
-        User user = mock(User.class);
+        User user = User.builder()
+                .location(Location.INDIA)
+                .build();
         Wallet wallet = new Wallet(user);
         SecurityContext context = mock(SecurityContext.class);
         SecurityContextHolder.setContext(context);

@@ -3,7 +3,10 @@ package com.example.wallet.services;
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.UserRequest;
 import com.example.wallet.dto.UserResponse;
+import com.example.wallet.dto.WalletResponse;
+import com.example.wallet.enums.Location;
 import com.example.wallet.exceptions.InvalidCredentialsException;
+import com.example.wallet.exceptions.InvalidLocationException;
 import com.example.wallet.exceptions.MissingCredentialsException;
 import com.example.wallet.exceptions.UserAlreadyExistsException;
 import com.example.wallet.models.User;
@@ -19,8 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,10 @@ public class AuthenticationService {
             throw new UserAlreadyExistsException();
         }
 
+        if (!Arrays.asList(Location.values()).contains(request.getLocation())) {
+            throw new InvalidLocationException();
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .username(request.getUsername())
@@ -44,8 +50,6 @@ public class AuthenticationService {
                 .location(request.getLocation())
                 .role(request.getRole())
                 .build();
-
-        walletService.create(user);
         userRepository.save(user);
 
         ApiResponse response = ApiResponse.builder()

@@ -1,7 +1,10 @@
 package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
+import com.example.wallet.dto.Money;
 import com.example.wallet.dto.UserRequest;
+import com.example.wallet.dto.WalletResponse;
+import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.Location;
 import com.example.wallet.enums.Role;
 import com.example.wallet.exceptions.InvalidCredentialsException;
@@ -22,6 +25,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -64,6 +68,44 @@ public class AuthenticationServiceTest {
                 .username("uname")
                 .password("password")
                 .location(Location.INDIA)
+                .role(Role.USER)
+                .build();
+        User user = mock(User.class);
+
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        ResponseEntity<ApiResponse> response = authService.register(request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("user registered", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+    }
+
+    @Test
+    void test_registeringUserFromUnitedStatesShouldHaveUSDAsCurrency() {
+        UserRequest request = UserRequest.builder()
+                .name("name")
+                .username("uname")
+                .password("password")
+                .location(Location.UNITED_STATES)
+                .role(Role.USER)
+                .build();
+        User user = mock(User.class);
+
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        ResponseEntity<ApiResponse> response = authService.register(request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("user registered", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+    }
+
+    @Test
+    void test_registeringUserFromBritainShouldHaveGBPAsCurrency() {
+        UserRequest request = UserRequest.builder()
+                .name("name")
+                .username("uname")
+                .password("password")
+                .location(Location.BRITAIN)
                 .role(Role.USER)
                 .build();
         User user = mock(User.class);

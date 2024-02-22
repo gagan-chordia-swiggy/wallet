@@ -129,4 +129,16 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+
+    @ExceptionHandler(value = InvalidLocationException.class)
+    public ResponseEntity<ApiResponse> handleInvalidLocationException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("Our service is not supported in the given location")
+                .developerMessage("not supported location")
+                .status(HttpStatus.BAD_REQUEST)
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }

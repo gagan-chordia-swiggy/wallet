@@ -50,6 +50,7 @@ public class AuthenticationService {
                 .location(request.getLocation())
                 .role(request.getRole())
                 .build();
+        walletService.create(user);
         userRepository.save(user);
 
         ApiResponse response = ApiResponse.builder()

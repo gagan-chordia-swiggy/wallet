@@ -1,7 +1,19 @@
 package com.example.wallet.components;
 
 import com.example.wallet.dto.ApiResponse;
-import com.example.wallet.exceptions.*;
+import com.example.wallet.exceptions.CurrencyAlreadyExistsException;
+import com.example.wallet.exceptions.CurrencyNotFoundException;
+import com.example.wallet.exceptions.InvalidAmountException;
+import com.example.wallet.exceptions.InvalidCredentialsException;
+import com.example.wallet.exceptions.InvalidLocationException;
+import com.example.wallet.exceptions.MissingCredentialsException;
+import com.example.wallet.exceptions.OverWithdrawalException;
+import com.example.wallet.exceptions.TransactionForSameUserException;
+import com.example.wallet.exceptions.TransactionNotFoundException;
+import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
+import com.example.wallet.exceptions.UserAlreadyExistsException;
+import com.example.wallet.exceptions.UserNotFoundException;
+import com.example.wallet.exceptions.WalletNotFoundException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

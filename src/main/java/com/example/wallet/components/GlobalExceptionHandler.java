@@ -134,7 +134,31 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleInvalidLocationException() {
         ApiResponse response = ApiResponse.builder()
                 .message("Our service is not supported in the given location")
-                .developerMessage("not supported location")
+                .developerMessage("unsupported location")
+                .status(HttpStatus.BAD_REQUEST)
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(value = CurrencyNotFoundException.class)
+    public ResponseEntity<ApiResponse> handleCurrencyNotFoundException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("The shared currency is not supported at the moment")
+                .developerMessage("unsupported currency")
+                .status(HttpStatus.BAD_REQUEST)
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(value = CurrencyAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse> handleCurrencyAlreadyExistsException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("Currency has already been added")
+                .developerMessage("duplicate currency")
                 .status(HttpStatus.BAD_REQUEST)
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .build();

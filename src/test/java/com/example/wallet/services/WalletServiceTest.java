@@ -7,7 +7,6 @@ import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.Location;
 import com.example.wallet.exceptions.InvalidAmountException;
 import com.example.wallet.exceptions.OverWithdrawalException;
-
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;

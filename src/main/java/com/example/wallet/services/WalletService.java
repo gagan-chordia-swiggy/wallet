@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -97,7 +98,13 @@ public class WalletService {
     }
 
     public ResponseEntity<ApiResponse> getWallets() {
-        List<Wallet> wallets = walletRepository.findAll();
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (user == null) {
+            throw new UserNotFoundException();
+        }
+
+        List<Wallet> wallets = walletRepository.findAllByUser(user);
         List<WalletResponse> walletResponses = new ArrayList<>();
 
         for (Wallet wallet: wallets) {

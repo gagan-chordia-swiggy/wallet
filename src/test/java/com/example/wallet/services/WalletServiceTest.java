@@ -298,10 +298,21 @@ public class WalletServiceTest {
 
     @Test
     void test_whenNoWalletsAreCreated_emptyListIsReturned() {
-        ResponseEntity<ApiResponse> response = walletService.getWallets();
-        List<Wallet> wallets = (List<Wallet>) Objects.requireNonNull(response.getBody()).getData().get("wallets");
+        Wallet firstWallet = mock(Wallet.class);
+        Wallet secondWallet = mock(Wallet.class);
+        Wallet thirdWallet = mock(Wallet.class);
+        User user = mock(User.class);
+        SecurityContext context = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(context);
+        Authentication authentication = mock(Authentication.class);
 
-        assertEquals(0, wallets.size());
+        when(context.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(walletRepository.findAllByUser(user)).thenReturn(List.of(firstWallet, thirdWallet));
+        ResponseEntity<ApiResponse> response = walletService.getWallets();
+
+        List<Wallet> wallets = (List<Wallet>) Objects.requireNonNull(response.getBody()).getData().get("wallets");
+        assertEquals(2, wallets.size());
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }

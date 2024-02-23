@@ -2,6 +2,7 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.CurrencyDTO;
+import com.example.wallet.dto.Money;
 import com.example.wallet.exceptions.CurrencyAlreadyExistsException;
 import com.example.wallet.models.CurrencyValue;
 import com.example.wallet.repository.CurrencyRepository;
@@ -66,5 +67,19 @@ public class CurrencyService {
 
     public ResponseEntity<ApiResponse> update(CurrencyDTO request) {
         return this.update(List.of(request));
+    }
+
+    public double convertToINR(Money request) {
+        CurrencyValue currency = currencyRepository.findById(request.getCurrency())
+                .orElseThrow(CurrencyNotFoundException::new);
+
+        return request.getAmount() * currency.getValue();
+    }
+
+    public double convertFromINR(Money request) {
+        CurrencyValue currency = currencyRepository.findById(request.getCurrency())
+                .orElseThrow(CurrencyNotFoundException::new);
+
+        return request.getAmount() / currency.getValue();
     }
 }

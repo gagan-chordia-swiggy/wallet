@@ -1,19 +1,7 @@
 package com.example.wallet.components;
 
 import com.example.wallet.dto.ApiResponse;
-import com.example.wallet.exceptions.CurrencyAlreadyExistsException;
-import com.example.wallet.exceptions.CurrencyNotFoundException;
-import com.example.wallet.exceptions.InvalidAmountException;
-import com.example.wallet.exceptions.InvalidCredentialsException;
-import com.example.wallet.exceptions.InvalidLocationException;
-import com.example.wallet.exceptions.MissingCredentialsException;
-import com.example.wallet.exceptions.OverWithdrawalException;
-import com.example.wallet.exceptions.TransactionForSameUserException;
-import com.example.wallet.exceptions.TransactionNotFoundException;
-import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
-import com.example.wallet.exceptions.UserAlreadyExistsException;
-import com.example.wallet.exceptions.UserNotFoundException;
-import com.example.wallet.exceptions.WalletNotFoundException;
+import com.example.wallet.exceptions.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -171,6 +159,18 @@ public class GlobalExceptionHandler {
         ApiResponse response = ApiResponse.builder()
                 .message("Currency has already been added")
                 .developerMessage("duplicate currency")
+                .status(HttpStatus.BAD_REQUEST)
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(value = IncompatibleCurrencyException.class)
+    public ResponseEntity<ApiResponse> handleIncompatibleCurrencyException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("Trying to transfer another currency")
+                .developerMessage("incompatible currency")
                 .status(HttpStatus.BAD_REQUEST)
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .build();

@@ -5,7 +5,7 @@ import com.example.wallet.dto.Money;
 import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.dto.TransactionResponse;
 import com.example.wallet.enums.TransactionType;
-import com.example.wallet.exceptions.TransactionForSameUserException;
+import com.example.wallet.exceptions.IncompatibleCurrencyException;
 import com.example.wallet.exceptions.TransactionNotFoundException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.exceptions.WalletNotFoundException;
@@ -36,6 +36,8 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
 
+    private final CurrencyService currencyService;
+
     public ResponseEntity<ApiResponse> transact(TransactionRequest request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (user == null) {
@@ -46,11 +48,33 @@ public class TransactionService {
 
         Wallet usersWallet = walletRepository.findByIdAndUser(request.getSendingWalletId(), user)
                 .orElseThrow(WalletNotFoundException::new);
-        Wallet anotherUsersWallet = walletRepository.findByIdAndUser(request.getReceivingWalletId(), user)
+        Wallet anotherUsersWallet = walletRepository.findByIdAndUser(request.getReceivingWalletId(), anotherUser)
                 .orElseThrow(WalletNotFoundException::new);
 
+        if (!usersWallet.getMoney().getCurrency().equals(request.getMoney().getCurrency())) {
+            throw new IncompatibleCurrencyException();
+        }
+
+        Double serviceCharge = null;
+        Double conversionValue = null;
+        Money forexMoney = null;
+        if (!anotherUsersWallet.getMoney().getCurrency().equals(request.getMoney().getCurrency())) {
+            serviceCharge = 10.0;
+            serviceCharge = currencyService.convertFromINR(new Money(serviceCharge, anotherUsersWallet.getMoney().getCurrency()));
+
+            conversionValue = currencyService.convertToINR(new Money(request.getMoney().getAmount(), request.getMoney().getCurrency()));
+            conversionValue = currencyService.convertFromINR(new Money(conversionValue, anotherUsersWallet.getMoney().getCurrency()));
+
+            forexMoney = new Money(conversionValue - serviceCharge, anotherUsersWallet.getMoney().getCurrency());
+        }
+
         usersWallet.withdraw(request.getMoney());
-        anotherUsersWallet.deposit(request.getMoney());
+
+        if (forexMoney != null) {
+            anotherUsersWallet.deposit(forexMoney);
+        } else {
+            anotherUsersWallet.deposit(request.getMoney());
+        }
 
         Long timestamp = System.currentTimeMillis();
 
@@ -59,12 +83,16 @@ public class TransactionService {
                 .money(request.getMoney())
                 .type(TransactionType.TRANSFERRED)
                 .timestamp(timestamp)
+                .conversionValue(null)
+                .serviceCharge(null)
                 .build();
         Transaction anotherTransaction = Transaction.builder()
                 .user(anotherUser)
-                .money(request.getMoney())
+                .money(forexMoney != null ? forexMoney : request.getMoney())
                 .type(TransactionType.RECEIVED)
                 .timestamp(timestamp)
+                .conversionValue(conversionValue)
+                .serviceCharge(serviceCharge)
                 .build();
 
         walletRepository.saveAll(List.of(usersWallet, anotherUsersWallet));

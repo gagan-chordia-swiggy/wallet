@@ -3,15 +3,7 @@ package com.example.wallet.models;
 import com.example.wallet.dto.Money;
 import com.example.wallet.enums.TransactionType;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +28,12 @@ public class Transaction {
     private User user;
 
     private Money money;
+
+    @Column
+    private Double serviceCharge;
+
+    @Column
+    private Double conversionValue;
 
     @Enumerated(EnumType.STRING)
     private TransactionType type;

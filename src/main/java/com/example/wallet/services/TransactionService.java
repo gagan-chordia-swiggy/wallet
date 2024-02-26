@@ -7,10 +7,10 @@ import com.example.wallet.dto.TransactionResponse;
 import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.IncompatibleCurrencyException;
+import com.example.wallet.exceptions.TransactionForSameWalletException;
 import com.example.wallet.exceptions.TransactionNotFoundException;
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
-import com.example.wallet.exceptions.WalletNotFoundException;
 import com.example.wallet.models.Transaction;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
@@ -43,24 +43,24 @@ public class TransactionService {
     public ResponseEntity<ApiResponse> transact(TransactionRequest request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (user == null) {
-            throw new UnauthorizedWalletAccessException();
+            throw new UserNotFoundException();
         }
 
         User anotherUser = userRepository.findByUsername(request.getReceiver()).orElseThrow(UserNotFoundException::new);
 
         Wallet usersWallet = walletRepository.findByIdAndUser(request.getSendingWalletId(), user)
-                .orElseThrow(WalletNotFoundException::new);
+                .orElseThrow(UnauthorizedWalletAccessException::new);
         Wallet anotherUsersWallet = walletRepository.findByIdAndUser(request.getReceivingWalletId(), anotherUser)
-                .orElseThrow(WalletNotFoundException::new);
+                .orElseThrow(UnauthorizedWalletAccessException::new);
 
-        if (!usersWallet.getMoney().getCurrency().equals(request.getMoney().getCurrency())) {
-            throw new IncompatibleCurrencyException();
-        }
+        isSameWallet(usersWallet, anotherUsersWallet);
+        isIncompatibleCurrency(request, usersWallet);
 
         Double serviceCharge = null;
         Double conversionValue = null;
         Money forexMoney = null;
         Currency anotherUserCurrency = anotherUsersWallet.getMoney().getCurrency();
+
         if (!anotherUserCurrency.equals(request.getMoney().getCurrency())) {
             serviceCharge = 10.0;
             serviceCharge = currencyService.convert(
@@ -77,15 +77,9 @@ public class TransactionService {
         }
 
         usersWallet.withdraw(request.getMoney());
-
-        if (forexMoney != null) {
-            anotherUsersWallet.deposit(forexMoney);
-        } else {
-            anotherUsersWallet.deposit(request.getMoney());
-        }
+        anotherUsersWallet.deposit(forexMoney != null ? forexMoney : request.getMoney());
 
         Long timestamp = System.currentTimeMillis();
-
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .money(request.getMoney())
@@ -121,7 +115,7 @@ public class TransactionService {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user == null) {
-            throw new UnauthorizedWalletAccessException();
+            throw new UserNotFoundException();
         }
 
         List<Transaction> transactions = transactionRepository.findAllByUser(user);
@@ -146,7 +140,7 @@ public class TransactionService {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user == null) {
-            throw new UnauthorizedWalletAccessException();
+            throw new UserNotFoundException();
         }
 
         Transaction transaction = transactionRepository.findByUserAndTimestamp(user, timestamp)
@@ -161,5 +155,17 @@ public class TransactionService {
                 .build();
 
         return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    private static void isIncompatibleCurrency(TransactionRequest request, Wallet usersWallet) {
+        if (!usersWallet.getMoney().getCurrency().equals(request.getMoney().getCurrency())) {
+            throw new IncompatibleCurrencyException();
+        }
+    }
+
+    private static void isSameWallet(Wallet usersWallet, Wallet anotherUsersWallet) {
+        if (usersWallet.equals(anotherUsersWallet)) {
+            throw new TransactionForSameWalletException();
+        }
     }
 }

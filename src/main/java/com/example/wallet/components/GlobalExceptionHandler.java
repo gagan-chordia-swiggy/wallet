@@ -97,7 +97,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = UnauthorizedWalletAccessException.class)
     public ResponseEntity<ApiResponse> handleUnauthorizedWalletAccessException() {
         ApiResponse response = ApiResponse.builder()
-                .message("Access to other wallets is not permitted")
+                .message("Access to others wallet is not permitted")
                 .developerMessage("unauthorized wallet access")
                 .statusCode(HttpStatus.UNAUTHORIZED.value())
                 .status(HttpStatus.UNAUTHORIZED)
@@ -106,10 +106,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @ExceptionHandler(value = TransactionForSameUserException.class)
+    @ExceptionHandler(value = TransactionForSameWalletException.class)
     public ResponseEntity<ApiResponse> handleTransactionForSameUserException() {
         ApiResponse response = ApiResponse.builder()
-                .message("Cannot transact with self")
+                .message("Cannot transact within the wallet")
                 .developerMessage("transaction with self")
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .status(HttpStatus.BAD_REQUEST)

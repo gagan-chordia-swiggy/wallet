@@ -186,6 +186,33 @@ public class TransactionServiceTest {
     }
 
     @Test
+    void test_transactionIsNotCompleteWhenUnknownWalletForUserIsAccessedForTransaction_throwsException() {
+        User user = mock(User.class);
+        User anotherUser = mock(User.class);
+        Long walletId = 1L;
+        Long anotherWalletId = 2L;
+        Wallet wallet = spy(new Wallet(new Money(30000, Currency.INR), user));
+        SecurityContext securityContext = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
+        Authentication authentication = mock(Authentication.class);
+        Money transactionAmount = new Money(10000, Currency.GBP);
+        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(anotherUser));
+        when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenThrow(new UnauthorizedWalletAccessException());
+
+        assertThrows(UnauthorizedWalletAccessException.class, () -> {
+            ResponseEntity<ApiResponse> response = transactionService.transact(request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("unauthorized wallet access", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
+        });
+    }
+
+    @Test
     void test_transactionNotCompleteWhenInsufficientFunds_throwsException() {
         User user = mock(User.class);
         User anotherUser = mock(User.class);
@@ -287,7 +314,7 @@ public class TransactionServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(null);
 
-        assertThrows(UnauthorizedWalletAccessException.class, () -> {
+        assertThrows(UserNotFoundException.class, () -> {
             ResponseEntity<ApiResponse> response = transactionService.fetch();
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -329,7 +356,7 @@ public class TransactionServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(null);
 
-        assertThrows(UnauthorizedWalletAccessException.class, () -> {
+        assertThrows(UserNotFoundException.class, () -> {
             ResponseEntity<ApiResponse> response = transactionService.fetchByTimestamp(timestamp);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

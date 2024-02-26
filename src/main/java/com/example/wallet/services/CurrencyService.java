@@ -2,23 +2,13 @@ package com.example.wallet.services;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.CurrencyDTO;
-import com.example.wallet.dto.Money;
-import com.example.wallet.enums.Currency;
 import com.example.wallet.exceptions.CurrencyAlreadyExistsException;
 import com.example.wallet.models.CurrencyValue;
 import com.example.wallet.repository.CurrencyRepository;
 import com.example.wallet.exceptions.CurrencyNotFoundException;
 
-import converter.CurrencyGrpc;
-import converter.Request;
-import converter.Response;
-
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -31,12 +21,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CurrencyService {
     private final CurrencyRepository currencyRepository;
-
-    @Value("${converter.grpc.service.host}")
-    private String host;
-
-    @Value("${converter.grpc.service.port}")
-    private int port;
 
     public ResponseEntity<ApiResponse> add(CurrencyDTO request) {
         if (currencyRepository.existsById(request.getCurrency())) {
@@ -82,26 +66,5 @@ public class CurrencyService {
 
     public ResponseEntity<ApiResponse> update(CurrencyDTO request) {
         return this.update(List.of(request));
-    }
-
-    public double convert(Currency from, Currency to, double value) {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port)
-                .usePlaintext()
-                .build();
-
-        CurrencyGrpc.CurrencyBlockingStub stub = CurrencyGrpc.newBlockingStub(channel);
-
-        Request request = Request.newBuilder()
-                .setFromCurrency(from.toString())
-                .setToCurrency(to.toString())
-                .setValue((float) value)
-                .build();
-
-        Response response = stub.convert(request);
-        Money money = new Money(response.getValue(), to);
-
-        channel.shutdown();
-
-        return money.getAmount();
     }
 }

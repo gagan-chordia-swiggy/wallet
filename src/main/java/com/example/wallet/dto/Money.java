@@ -29,4 +29,8 @@ public class Money {
         this.amount = 0;
         this.currency = currency;
     }
+
+    public double getAmount() {
+        return Math.round(this.amount * 100.0) / 100.0;
+    }
 }

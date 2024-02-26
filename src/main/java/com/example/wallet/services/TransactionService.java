@@ -38,7 +38,7 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
 
-    private final CurrencyService currencyService;
+    private final CurrencyConverterService converterService;
 
     public ResponseEntity<ApiResponse> transact(TransactionRequest request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -63,11 +63,11 @@ public class TransactionService {
 
         if (!anotherUserCurrency.equals(request.getMoney().getCurrency())) {
             serviceCharge = 10.0;
-            serviceCharge = currencyService.convert(
+            serviceCharge = converterService.convert(
                     Currency.INR, anotherUserCurrency, serviceCharge);
             serviceCharge = Math.round(serviceCharge * 100.0) / 100.0;
 
-            conversionValue = currencyService.convert(
+            conversionValue = converterService.convert(
                     request.getMoney().getCurrency(),
                     anotherUserCurrency,
                     request.getMoney().getAmount());

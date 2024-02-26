@@ -21,7 +21,8 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long timestamp;
+    @Builder.Default
+    private Long timestamp = System.currentTimeMillis();
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -29,10 +30,8 @@ public class Transaction {
 
     private Money money;
 
-    @Column
     private Double serviceCharge;
 
-    @Column
     private Double conversionValue;
 
     @Enumerated(EnumType.STRING)

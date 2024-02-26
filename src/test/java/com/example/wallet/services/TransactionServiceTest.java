@@ -54,7 +54,7 @@ public class TransactionServiceTest {
     private TransactionRepository transactionRepository;
 
     @Mock
-    private CurrencyService currencyService;
+    private CurrencyConverterService converterService;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -114,8 +114,8 @@ public class TransactionServiceTest {
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(anotherUser));
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenReturn(Optional.of(anotherWallet));
-        when(currencyService.convert(Currency.INR, Currency.GBP, 10)).thenReturn(0.01);
-        when(currencyService.convert(Currency.INR, Currency.GBP, 10000)).thenReturn(100.0);
+        when(converterService.convert(Currency.INR, Currency.GBP, 10)).thenReturn(0.01);
+        when(converterService.convert(Currency.INR, Currency.GBP, 10000)).thenReturn(100.0);
         ResponseEntity<ApiResponse> response = transactionService.transact(request);
 
         verify(wallet, times(1)).withdraw(transactionAmount);

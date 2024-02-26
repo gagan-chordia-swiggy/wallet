@@ -29,7 +29,6 @@ import java.util.Map;
 public class WalletService {
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
-    private final TransactionRepository transactionRepository;
 
     public ResponseEntity<ApiResponse> create(User user) {
         Wallet wallet = new Wallet(user);
@@ -60,19 +59,9 @@ public class WalletService {
         }
 
         Wallet wallet = walletRepository.findByIdAndUser(walletId, user).orElseThrow(UnauthorizedWalletAccessException::new);
-
-        long timestamp = System.currentTimeMillis();
-        Transaction transaction = Transaction.builder()
-                .user(user)
-                .money(moneyRequest)
-                .timestamp(timestamp)
-                .type(TransactionType.DEPOSIT)
-                .build();
-
         wallet.deposit(moneyRequest);
 
         ApiResponse response = ApiResponse.builder()
-                .timestamp(timestamp)
                 .message("Amount deposited")
                 .developerMessage("Amount deposited")
                 .status(HttpStatus.OK)
@@ -80,7 +69,6 @@ public class WalletService {
                 .data(Map.of("wallet", new WalletResponse(wallet)))
                 .build();
 
-        transactionRepository.save(transaction);
         walletRepository.save(wallet);
 
         return ResponseEntity.ok().body(response);
@@ -94,17 +82,10 @@ public class WalletService {
         }
 
         Wallet wallet = walletRepository.findByIdAndUser(walletId, user).orElseThrow(UnauthorizedWalletAccessException::new);
-        long timestamp = System.currentTimeMillis();
-        Transaction transaction = Transaction.builder()
-                .user(user)
-                .money(request)
-                .timestamp(timestamp)
-                .type(TransactionType.WITHDRAW)
-                .build();
+
         wallet.withdraw(request);
 
         ApiResponse response = ApiResponse.builder()
-                .timestamp(timestamp)
                 .message("Amount withdrawn")
                 .developerMessage("Amount withdrawn")
                 .status(HttpStatus.OK)
@@ -112,7 +93,6 @@ public class WalletService {
                 .data(Map.of("wallet", new WalletResponse(wallet)))
                 .build();
 
-        transactionRepository.save(transaction);
         walletRepository.save(wallet);
 
         return ResponseEntity.ok().body(response);

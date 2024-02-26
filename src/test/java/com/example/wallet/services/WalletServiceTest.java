@@ -44,9 +44,6 @@ public class WalletServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private TransactionRepository transactionRepository;
-
     @InjectMocks
     private WalletService walletService;
 
@@ -300,7 +297,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    void test_whenNoWalletsAreCreated_emptyListIsReturned() {
+    void test_whenTwoWalletsAreCreatedForUser_TwoWalletsAreReturned() {
         Wallet firstWallet = mock(Wallet.class);
         Wallet secondWallet = mock(Wallet.class);
         Wallet thirdWallet = mock(Wallet.class);

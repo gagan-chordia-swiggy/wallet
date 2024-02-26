@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "currency")
+@Table(name = "currencies")
 public class CurrencyValue {
     @Id
     @Enumerated(EnumType.STRING)

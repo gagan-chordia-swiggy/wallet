@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package converter;
+
+service Currency {
+  rpc Convert(Request) returns (Response);
+}
+
+message Request {
+  string fromCurrency = 1;
+  string toCurrency = 2;
+  float value = 3;
+};
+
+message Response {
+  string currency = 1;
+  float value = 2;
+};
+
+// protoc --java_out=src/main/java src/main/java/com/example/wallet/proto/converter.proto

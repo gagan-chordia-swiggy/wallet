@@ -62,6 +62,5 @@ public class Wallet {
         }
 
         this.money.setAmount(this.money.getAmount() + amount.getAmount());
-        this.money.setCurrency(amount.getCurrency());
     }
 }

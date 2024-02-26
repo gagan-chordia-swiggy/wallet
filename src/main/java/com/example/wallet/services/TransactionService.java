@@ -4,9 +4,11 @@ import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
 import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.dto.TransactionResponse;
+import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.IncompatibleCurrencyException;
 import com.example.wallet.exceptions.TransactionNotFoundException;
+import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.exceptions.WalletNotFoundException;
 import com.example.wallet.models.Transaction;
@@ -41,7 +43,7 @@ public class TransactionService {
     public ResponseEntity<ApiResponse> transact(TransactionRequest request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (user == null) {
-            throw new UserNotFoundException();
+            throw new UnauthorizedWalletAccessException();
         }
 
         User anotherUser = userRepository.findByUsername(request.getReceiver()).orElseThrow(UserNotFoundException::new);
@@ -58,12 +60,18 @@ public class TransactionService {
         Double serviceCharge = null;
         Double conversionValue = null;
         Money forexMoney = null;
-        if (!anotherUsersWallet.getMoney().getCurrency().equals(request.getMoney().getCurrency())) {
+        Currency anotherUserCurrency = anotherUsersWallet.getMoney().getCurrency();
+        if (!anotherUserCurrency.equals(request.getMoney().getCurrency())) {
             serviceCharge = 10.0;
-            serviceCharge = currencyService.convertFromINR(new Money(serviceCharge, anotherUsersWallet.getMoney().getCurrency()));
+            serviceCharge = currencyService.convert(
+                    Currency.INR, anotherUserCurrency, serviceCharge);
+            serviceCharge = Math.round(serviceCharge * 100.0) / 100.0;
 
-            conversionValue = currencyService.convertToINR(new Money(request.getMoney().getAmount(), request.getMoney().getCurrency()));
-            conversionValue = currencyService.convertFromINR(new Money(conversionValue, anotherUsersWallet.getMoney().getCurrency()));
+            conversionValue = currencyService.convert(
+                    request.getMoney().getCurrency(),
+                    anotherUserCurrency,
+                    request.getMoney().getAmount());
+            conversionValue = Math.round(conversionValue * 100.0) / 100.0;
 
             forexMoney = new Money(conversionValue - serviceCharge, anotherUsersWallet.getMoney().getCurrency());
         }
@@ -99,6 +107,7 @@ public class TransactionService {
         transactionRepository.saveAll(List.of(transaction, anotherTransaction));
 
         ApiResponse response = ApiResponse.builder()
+                .timestamp(timestamp)
                 .message("Transaction complete")
                 .developerMessage("transaction complete")
                 .statusCode(HttpStatus.OK.value())
@@ -112,11 +121,10 @@ public class TransactionService {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user == null) {
-            throw new UserNotFoundException();
+            throw new UnauthorizedWalletAccessException();
         }
 
         List<Transaction> transactions = transactionRepository.findAllByUser(user);
-
         List<TransactionResponse> responses = new ArrayList<>();
 
         for (Transaction transaction : transactions) {
@@ -138,14 +146,13 @@ public class TransactionService {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user == null) {
-            throw new UserNotFoundException();
+            throw new UnauthorizedWalletAccessException();
         }
 
         Transaction transaction = transactionRepository.findByUserAndTimestamp(user, timestamp)
                 .orElseThrow(TransactionNotFoundException::new);
 
         ApiResponse response = ApiResponse.builder()
-                .timestamp(timestamp)
                 .message("Fetched")
                 .developerMessage("fetched")
                 .status(HttpStatus.OK)

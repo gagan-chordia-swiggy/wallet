@@ -1,7 +1,6 @@
 package com.example.wallet.configs;
 
 import com.example.wallet.exceptions.InvalidCredentialsException;
-import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;

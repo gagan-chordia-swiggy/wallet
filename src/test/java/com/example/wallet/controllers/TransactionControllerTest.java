@@ -24,8 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -53,7 +52,7 @@ class TransactionControllerTest {
 
         when(transactionService.transact(transaction)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
@@ -68,7 +67,7 @@ class TransactionControllerTest {
 
         when(transactionService.transact(transaction)).thenThrow(new UserNotFoundException());
 
-        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -83,7 +82,7 @@ class TransactionControllerTest {
 
         when(transactionService.transact(transaction)).thenThrow(new OverWithdrawalException());
 
-        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -98,22 +97,7 @@ class TransactionControllerTest {
 
         when(transactionService.transact(transaction)).thenThrow(new InvalidAmountException());
 
-        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
-                .contentType("application/json")
-                .content(request)
-        ).andExpect(status().isBadRequest());
-        verify(transactionService, times(1)).transact(transaction);
-    }
-
-    @Test
-    void test_transactionNotCompleteWhenUserTriesToTransactWithSelf_throwsException() throws Exception {
-        Money money = new Money(0, Currency.INR);
-        TransactionRequest transaction = new TransactionRequest("user", 1L, 2L, money);
-        String request = mapper.writeValueAsString(transaction);
-
-        when(transactionService.transact(transaction)).thenThrow(new TransactionForSameUserException());
-
-        mockMvc.perform(patch("/api/v1/users/wallets/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -124,7 +108,7 @@ class TransactionControllerTest {
     void test_fetchAllTransactionsSuccessfully() throws Exception {
         when((transactionService.fetch())).thenReturn(new ResponseEntity<>(HttpStatus.FOUND));
 
-        mockMvc.perform(get("/api/v1/users/wallets/transactions/")).andExpect(status().isFound());
+        mockMvc.perform(get("/api/v1/transactions/")).andExpect(status().isFound());
         verify(transactionService, times(1)).fetch();
     }
 
@@ -132,7 +116,7 @@ class TransactionControllerTest {
     void test_unknownUserWhileFetchingTransactions_isBadRequest() throws Exception {
         when(transactionService.fetch()).thenThrow(new UserNotFoundException());
 
-        mockMvc.perform(get("/api/v1/users/wallets/transactions/")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/transactions/")).andExpect(status().isBadRequest());
         verify(transactionService, times(1)).fetch();
     }
 
@@ -142,7 +126,7 @@ class TransactionControllerTest {
 
         when(transactionService.fetchByTimestamp(timestamp)).thenReturn(new ResponseEntity<>(HttpStatus.FOUND));
 
-        mockMvc.perform(get("/api/v1/users/wallets/transactions?timestamp=" + timestamp)).andExpect(status().isFound());
+        mockMvc.perform(get("/api/v1/transactions?timestamp=" + timestamp)).andExpect(status().isFound());
         verify(transactionService, times(1)).fetchByTimestamp(timestamp);
     }
 
@@ -152,7 +136,7 @@ class TransactionControllerTest {
 
         when(transactionService.fetchByTimestamp(timestamp)).thenThrow(new UserNotFoundException());
 
-        mockMvc.perform(get("/api/v1/users/wallets/transactions?timestamp=" + timestamp)).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/transactions?timestamp=" + timestamp)).andExpect(status().isBadRequest());
         verify(transactionService, times(1)).fetchByTimestamp(timestamp);
     }
 
@@ -162,7 +146,7 @@ class TransactionControllerTest {
 
         when(transactionService.fetchByTimestamp(timestamp)).thenThrow(new TransactionNotFoundException());
 
-        mockMvc.perform(get("/api/v1/users/wallets/transactions?timestamp=" + timestamp)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/transactions?timestamp=" + timestamp)).andExpect(status().isNotFound());
         verify(transactionService, times(1)).fetchByTimestamp(timestamp);
     }
 }

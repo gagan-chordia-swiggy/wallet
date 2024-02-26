@@ -11,8 +11,6 @@ spring:
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
-        hibernate:
-            ddl-auto: create
 
 application:
     security:
@@ -22,3 +20,9 @@ application:
                 expiration: 86400000
             refresh-token:
                 expiration: 1209600000
+
+converter:
+    grpc:
+        service:
+            host: localhost
+            port: 8001

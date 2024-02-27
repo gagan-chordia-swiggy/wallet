@@ -56,16 +56,18 @@ public class TransactionService {
         isSameWallet(usersWallet, anotherUsersWallet);
         isIncompatibleCurrency(request, usersWallet);
 
-        Double serviceCharge = null;
+        Double serviceChargeAmount = null;
         Double conversionValue = null;
         Money forexMoney = null;
+        Money serviceCharge = null;
+
         Currency anotherUserCurrency = anotherUsersWallet.getMoney().getCurrency();
 
         if (!anotherUserCurrency.equals(request.getMoney().getCurrency())) {
-            serviceCharge = 10.0;
-            serviceCharge = converterService.convert(
-                    Currency.INR, anotherUserCurrency, serviceCharge);
-            serviceCharge = Math.round(serviceCharge * 100.0) / 100.0;
+            serviceChargeAmount = 10.0;
+            serviceChargeAmount = converterService.convert(Currency.INR, anotherUserCurrency, serviceChargeAmount);
+            serviceChargeAmount = Math.round(serviceChargeAmount * 100.0) / 100.0;
+            serviceCharge = new Money(serviceChargeAmount, request.getMoney().getCurrency());
 
             conversionValue = converterService.convert(
                     request.getMoney().getCurrency(),
@@ -73,32 +75,36 @@ public class TransactionService {
                     request.getMoney().getAmount());
             conversionValue = Math.round(conversionValue * 100.0) / 100.0;
 
-            forexMoney = new Money(conversionValue - serviceCharge, anotherUsersWallet.getMoney().getCurrency());
+            forexMoney = new Money(conversionValue, anotherUsersWallet.getMoney().getCurrency());
+        }
+
+        if (serviceCharge != null) {
+            usersWallet.withdraw(serviceCharge);
         }
 
         usersWallet.withdraw(request.getMoney());
         anotherUsersWallet.deposit(forexMoney != null ? forexMoney : request.getMoney());
 
         Long timestamp = System.currentTimeMillis();
-        Transaction transaction = Transaction.builder()
+        Transaction transferred = Transaction.builder()
                 .user(user)
                 .money(request.getMoney())
                 .type(TransactionType.TRANSFERRED)
                 .timestamp(timestamp)
                 .conversionValue(null)
-                .serviceCharge(null)
+                .serviceCharge(serviceChargeAmount)
                 .build();
-        Transaction anotherTransaction = Transaction.builder()
+        Transaction received = Transaction.builder()
                 .user(anotherUser)
                 .money(forexMoney != null ? forexMoney : request.getMoney())
                 .type(TransactionType.RECEIVED)
                 .timestamp(timestamp)
                 .conversionValue(conversionValue)
-                .serviceCharge(serviceCharge)
+                .serviceCharge(null)
                 .build();
 
         walletRepository.saveAll(List.of(usersWallet, anotherUsersWallet));
-        transactionRepository.saveAll(List.of(transaction, anotherTransaction));
+        transactionRepository.saveAll(List.of(transferred, received));
 
         ApiResponse response = ApiResponse.builder()
                 .timestamp(timestamp)
@@ -113,7 +119,6 @@ public class TransactionService {
 
     public ResponseEntity<ApiResponse> fetch() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         if (user == null) {
             throw new UserNotFoundException();
         }
@@ -138,7 +143,6 @@ public class TransactionService {
 
     public ResponseEntity<ApiResponse> fetchByTimestamp(Long timestamp) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         if (user == null) {
             throw new UserNotFoundException();
         }

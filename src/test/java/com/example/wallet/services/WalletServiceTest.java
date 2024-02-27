@@ -11,7 +11,7 @@ import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
-import com.example.wallet.repository.TransactionRepository;
+import com.example.wallet.repository.PassbookRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
 
@@ -43,6 +43,9 @@ public class WalletServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PassbookRepository passbookRepository;
 
     @InjectMocks
     private WalletService walletService;
@@ -155,6 +158,7 @@ public class WalletServiceTest {
         when(authentication.getPrincipal()).thenReturn(user);
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(wallet.getId()).thenReturn(1L);
+        when(user.getLocation()).thenReturn(Location.INDIA);
         ResponseEntity<ApiResponse> response = walletService.deposit(walletId, new Money(10, Currency.INR));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -221,6 +225,7 @@ public class WalletServiceTest {
         when(context.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
+        when(user.getLocation()).thenReturn(Location.INDIA);
         ResponseEntity<ApiResponse> response = walletService.withdraw(1L, new Money(10, Currency.INR));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());

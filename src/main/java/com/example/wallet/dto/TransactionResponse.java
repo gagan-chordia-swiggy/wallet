@@ -2,8 +2,10 @@ package com.example.wallet.dto;
 
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.models.Transaction;
+
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +20,8 @@ public class TransactionResponse {
     private String username;
     private Long timestamp;
     private Money money;
+    private Double serviceCharge;
+    private Double conversionValue;
 
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
@@ -28,5 +32,7 @@ public class TransactionResponse {
         this.timestamp = transaction.getTimestamp();
         this.money = transaction.getMoney();
         this.transactionType = transaction.getType();
+        this.serviceCharge = transaction.getServiceCharge();
+        this.conversionValue = transaction.getConversionValue();
     }
 }

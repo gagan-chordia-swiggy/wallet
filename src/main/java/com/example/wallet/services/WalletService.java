@@ -6,11 +6,11 @@ import com.example.wallet.dto.WalletResponse;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
-import com.example.wallet.models.Transaction;
+import com.example.wallet.models.PassbookEntry;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
 
-import com.example.wallet.repository.TransactionRepository;
+import com.example.wallet.repository.PassbookRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,7 @@ import java.util.Map;
 public class WalletService {
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
+    private final PassbookRepository passbookRepository;
 
     public ResponseEntity<ApiResponse> create(User user) {
         Wallet wallet = new Wallet(user);
@@ -69,6 +70,14 @@ public class WalletService {
                 .data(Map.of("wallet", new WalletResponse(wallet)))
                 .build();
 
+        Money depositedMoney = new Money(moneyRequest.getAmount(), user.getLocation().getCurrency());
+        PassbookEntry entry = PassbookEntry.builder()
+                .user(user)
+                .money(depositedMoney)
+                .type(TransactionType.DEPOSIT)
+                .build();
+
+        passbookRepository.save(entry);
         walletRepository.save(wallet);
 
         return ResponseEntity.ok().body(response);
@@ -76,7 +85,6 @@ public class WalletService {
 
     public ResponseEntity<ApiResponse> withdraw(Long walletId, Money request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         if (user == null) {
             throw new UserNotFoundException();
         }
@@ -93,6 +101,14 @@ public class WalletService {
                 .data(Map.of("wallet", new WalletResponse(wallet)))
                 .build();
 
+        Money withdrawnMoney = new Money(request.getAmount(), user.getLocation().getCurrency());
+        PassbookEntry entry = PassbookEntry.builder()
+                .user(user)
+                .money(withdrawnMoney)
+                .type(TransactionType.WITHDRAW)
+                .build();
+
+        passbookRepository.save(entry);
         walletRepository.save(wallet);
 
         return ResponseEntity.ok().body(response);

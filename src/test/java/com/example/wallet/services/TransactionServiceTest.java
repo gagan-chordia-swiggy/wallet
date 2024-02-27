@@ -120,7 +120,7 @@ public class TransactionServiceTest {
 
         verify(wallet, times(1)).withdraw(transactionAmount);
         verify(wallet, never()).deposit(transactionAmount);
-        verify(anotherWallet, times(1)).deposit(new Money(99.99, Currency.GBP));
+        verify(anotherWallet, times(1)).deposit(new Money(100.0, Currency.GBP));
         verify(anotherWallet, never()).withdraw(transactionAmount);
         verify(walletRepository, times(1)).saveAll(List.of(wallet, anotherWallet));
         verify(transactionRepository, times(1)).saveAll(any(List.class));

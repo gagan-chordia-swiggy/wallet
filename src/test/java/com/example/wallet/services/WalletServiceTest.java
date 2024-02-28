@@ -158,6 +158,7 @@ public class WalletServiceTest {
         when(authentication.getPrincipal()).thenReturn(user);
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(wallet.getId()).thenReturn(1L);
+        when(wallet.getMoney()).thenReturn(new Money());
         when(user.getLocation()).thenReturn(Location.INDIA);
         ResponseEntity<ApiResponse> response = walletService.deposit(walletId, new Money(10, Currency.INR));
 

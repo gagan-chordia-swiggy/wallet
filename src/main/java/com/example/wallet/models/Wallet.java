@@ -44,24 +44,10 @@ public class Wallet {
     }
 
     public void withdraw(Money amount) {
-        checkForInvalidAmount(amount);
-
-        if (this.money.getAmount() - amount.getAmount() < 0) {
-            throw new OverWithdrawalException();
-        }
-
-        this.money.setAmount(this.money.getAmount() - amount.getAmount());
+        this.money.subtract(amount);
     }
 
     public void deposit(Money amount) {
-        checkForInvalidAmount(amount);
-
-        this.money.setAmount(this.money.getAmount() + amount.getAmount());
-    }
-
-    private static void checkForInvalidAmount(Money amount) {
-        if (amount.getAmount() < 0.01) {
-            throw new InvalidAmountException();
-        }
+        this.money.add(amount);
     }
 }

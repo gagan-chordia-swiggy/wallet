@@ -33,10 +33,12 @@ public class PassbookEntry {
     private Long timestamp = System.currentTimeMillis();
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "wallet_id")
+    private Wallet wallet;
 
     private Money money;
+
+    private Double serviceCharge;
 
     @Enumerated(EnumType.STRING)
     private TransactionType type;

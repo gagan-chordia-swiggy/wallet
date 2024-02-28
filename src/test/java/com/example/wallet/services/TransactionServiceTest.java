@@ -58,8 +58,6 @@ public class TransactionServiceTest {
     @Mock
     private PassbookRepository passbookRepository;
 
-    @Mock
-    private CurrencyConverterService converterService;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -81,11 +79,12 @@ public class TransactionServiceTest {
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(100, Currency.INR);
-        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
+        TransactionRequest request = new TransactionRequest("username", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(anotherUser));
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("username")).thenReturn(Optional.of(anotherUser));
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenReturn(Optional.of(anotherWallet));
         ResponseEntity<ApiResponse> response = transactionService.transact(request);
@@ -95,7 +94,8 @@ public class TransactionServiceTest {
         verify(anotherWallet, times(1)).deposit(transactionAmount);
         verify(anotherWallet, never()).withdraw(transactionAmount);
         verify(walletRepository, times(1)).saveAll(List.of(wallet, anotherWallet));
-        verify(transactionRepository, times(1)).saveAll(any(List.class));
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(passbookRepository, times(1)).saveAll(any(List.class));
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("transaction complete", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }
@@ -112,15 +112,14 @@ public class TransactionServiceTest {
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(10000, Currency.INR);
-        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
+        TransactionRequest request = new TransactionRequest("username", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(anotherUser));
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("username")).thenReturn(Optional.of(anotherUser));
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenReturn(Optional.of(anotherWallet));
-        when(converterService.convert(Currency.INR, Currency.GBP, 10)).thenReturn(0.01);
-        when(converterService.convert(Currency.INR, Currency.GBP, 10000)).thenReturn(100.0);
         ResponseEntity<ApiResponse> response = transactionService.transact(request);
 
         verify(wallet, times(1)).withdraw(transactionAmount);
@@ -128,7 +127,8 @@ public class TransactionServiceTest {
         verify(anotherWallet, times(1)).deposit(new Money(100.0, Currency.GBP));
         verify(anotherWallet, never()).withdraw(transactionAmount);
         verify(walletRepository, times(1)).saveAll(List.of(wallet, anotherWallet));
-        verify(transactionRepository, times(1)).saveAll(any(List.class));
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(passbookRepository, times(1)).saveAll(any(List.class));
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("transaction complete", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }
@@ -145,11 +145,12 @@ public class TransactionServiceTest {
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(10000, Currency.GBP);
-        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
+        TransactionRequest request = new TransactionRequest("username", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(anotherUser));
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("username")).thenReturn(Optional.of(anotherUser));
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenReturn(Optional.of(anotherWallet));
 
@@ -170,7 +171,7 @@ public class TransactionServiceTest {
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(100, Currency.INR);
-        TransactionRequest request = new TransactionRequest("user", 1L, 2L, transactionAmount);
+        TransactionRequest request = new TransactionRequest("username", 1L, 2L, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
@@ -201,11 +202,12 @@ public class TransactionServiceTest {
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(10000, Currency.GBP);
-        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
+        TransactionRequest request = new TransactionRequest("username", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(anotherUser));
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("username")).thenReturn(Optional.of(anotherUser));
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenThrow(new UnauthorizedWalletAccessException());
 
@@ -229,11 +231,12 @@ public class TransactionServiceTest {
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(100, Currency.INR);
-        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
+        TransactionRequest request = new TransactionRequest("username", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(anotherUser));
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("username")).thenReturn(Optional.of(anotherUser));
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenReturn(Optional.of(anotherWallet));
 
@@ -263,17 +266,18 @@ public class TransactionServiceTest {
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
         Money transactionAmount = new Money(-6, Currency.INR);
-        TransactionRequest request = new TransactionRequest("user", walletId, anotherWalletId, transactionAmount);
+        TransactionRequest request = new TransactionRequest("username", walletId, anotherWalletId, transactionAmount);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(anotherUser));
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("username")).thenReturn(Optional.of(anotherUser));
         when(walletRepository.findByIdAndUser(walletId, user)).thenReturn(Optional.of(wallet));
         when(walletRepository.findByIdAndUser(anotherWalletId, anotherUser)).thenReturn(Optional.of(anotherWallet));
 
         assertThrows(InvalidAmountException.class, () -> {
             ResponseEntity<ApiResponse> response = transactionService.transact(request);
-            
+
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("Invalid amount", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
         });
@@ -288,26 +292,30 @@ public class TransactionServiceTest {
     @Test
     void test_fetchAllTransactionsOfUserSuccessfully() {
         User user = mock(User.class);
+        User anotherUser = mock(User.class);
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
         Authentication authentication = mock(Authentication.class);
-        Transaction firstTransaction = spy(new Transaction(1L, System.currentTimeMillis(), user, new Money(), null, null, TransactionType.TRANSFERRED));
-        Transaction secondTransaction = spy(new Transaction(1L, System.currentTimeMillis(), user, new Money(), null, null, TransactionType.TRANSFERRED));
-        Transaction thirdTransaction = spy(new Transaction(1L, System.currentTimeMillis(), user, new Money(), null, null, TransactionType.RECEIVED));
-        PassbookEntry entry = spy(new PassbookEntry(1L, System.currentTimeMillis(), user, new Money(), TransactionType.DEPOSIT));
+        Transaction firstTransaction = mock(Transaction.class);
+        Transaction secondTransaction = mock(Transaction.class);
+        PassbookEntry entry = spy(new PassbookEntry(1L, System.currentTimeMillis(), mock(Wallet.class), new Money(), 0.0, TransactionType.DEPOSIT));
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(firstTransaction.getUser()).thenReturn(user);
-        when(secondTransaction.getUser()).thenReturn(user);
-        when(thirdTransaction.getUser()).thenReturn(user);
+        when(authentication.getName()).thenReturn("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(firstTransaction.getSender()).thenReturn(user);
+        when(secondTransaction.getSender()).thenReturn(user);
+        when(firstTransaction.getReceiver()).thenReturn(anotherUser);
+        when(secondTransaction.getReceiver()).thenReturn(anotherUser);
         when(user.getUsername()).thenReturn("user");
-        when(transactionRepository.findAllByUser(user)).thenReturn(List.of(firstTransaction, secondTransaction, thirdTransaction));
-        when(passbookRepository.findAllByUser(user)).thenReturn(List.of(entry));
+        when(firstTransaction.getReceiverEntry()).thenReturn(entry);
+        when(firstTransaction.getSenderEntry()).thenReturn(entry);
+        when(secondTransaction.getReceiverEntry()).thenReturn(entry);
+        when(secondTransaction.getSenderEntry()).thenReturn(entry);
+        when(transactionRepository.findAllBySenderOrReceiver(user, user)).thenReturn(List.of(firstTransaction, secondTransaction));
         ResponseEntity<ApiResponse> response = transactionService.fetch();
 
-        verify(transactionRepository, times(1)).findAllByUser(user);
-        verify(passbookRepository, times(1)).findAllByUser(user);
+        verify(transactionRepository, times(1)).findAllBySenderOrReceiver(user, user);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("fetched", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }
@@ -328,69 +336,6 @@ public class TransactionServiceTest {
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("user not found", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
         });
-        verify(transactionRepository, never()).findAllByUser(user);
-    }
-
-    @Test
-    void test_fetchTransactionOfAUserWithSpecificTimestampSuccessfully() {
-        User user = mock(User.class);
-        Long timestamp = System.currentTimeMillis();
-        SecurityContext securityContext = mock(SecurityContext.class);
-        SecurityContextHolder.setContext(securityContext);
-        Authentication authentication = mock(Authentication.class);
-        Transaction transaction = spy(new Transaction(1L, System.currentTimeMillis(), user, new Money(), null, null, TransactionType.TRANSFERRED));
-
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(transaction.getUser()).thenReturn(user);
-        when(transaction.getTimestamp()).thenReturn(timestamp);
-        when(user.getUsername()).thenReturn("user");
-        when(transactionRepository.findByUserAndTimestamp(user, timestamp)).thenReturn(Optional.of(transaction));
-        ResponseEntity<ApiResponse> response = transactionService.fetchByTimestamp(timestamp);
-
-        verify(transactionRepository, times(1)).findByUserAndTimestamp(user, timestamp);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("fetched", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
-    }
-
-    @Test
-    void test_unknownUserWhileFetchingWithTimestamp_throwsException() {
-        User user = mock(User.class);
-        Long timestamp = System.currentTimeMillis();
-        SecurityContext securityContext = mock(SecurityContext.class);
-        SecurityContextHolder.setContext(securityContext);
-        Authentication authentication = mock(Authentication.class);
-
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(null);
-
-        assertThrows(UserNotFoundException.class, () -> {
-            ResponseEntity<ApiResponse> response = transactionService.fetchByTimestamp(timestamp);
-
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertEquals("user not found", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
-        });
-        verify(transactionRepository, never()).findByUserAndTimestamp(user, timestamp);
-    }
-
-    @Test
-    void test_transactionNotFoundForSpecificTimestamp_throwsException() {
-        User user = mock(User.class);
-        Long timestamp = System.currentTimeMillis();
-        SecurityContext securityContext = mock(SecurityContext.class);
-        SecurityContextHolder.setContext(securityContext);
-        Authentication authentication = mock(Authentication.class);
-
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(transactionRepository.findByUserAndTimestamp(user, timestamp)).thenThrow(new TransactionNotFoundException());
-
-        assertThrows(TransactionNotFoundException.class, () -> {
-            ResponseEntity<ApiResponse> response = transactionService.fetchByTimestamp(timestamp);
-
-            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-            assertEquals("transaction not found", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
-        });
-        verify(transactionRepository, times(1)).findByUserAndTimestamp(user, timestamp);
+        verify(transactionRepository, never()).findAllBySenderOrReceiver(user, user);
     }
 }

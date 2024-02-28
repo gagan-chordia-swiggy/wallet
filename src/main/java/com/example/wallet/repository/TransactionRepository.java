@@ -9,6 +9,5 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    List<Transaction> findAllByUser(User user);
-    Optional<Transaction> findByUserAndTimestamp(User user, Long timestamp);
+    List<Transaction> findAllBySenderOrReceiver(User user1, User user2);
 }

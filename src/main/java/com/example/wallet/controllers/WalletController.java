@@ -25,13 +25,13 @@ public class WalletController {
         return this.walletService.create();
     }
 
-    @PatchMapping("/{walletId}/deposit")
+    @PostMapping("/{walletId}/deposit")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse> deposit(@PathVariable(value = "walletId") Long id, @RequestBody Money moneyRequest) {
         return this.walletService.deposit(id, moneyRequest);
     }
 
-    @PatchMapping("/{walletId}/withdraw")
+    @PostMapping("/{walletId}/withdrawal")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse> withdraw(@PathVariable(value = "walletId") Long id, @RequestBody Money request) {
         return this.walletService.withdraw(id, request);

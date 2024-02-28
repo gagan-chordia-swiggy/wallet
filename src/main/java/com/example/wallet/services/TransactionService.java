@@ -8,7 +8,6 @@ import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.IncompatibleCurrencyException;
 import com.example.wallet.exceptions.TransactionForSameWalletException;
-import com.example.wallet.exceptions.TransactionNotFoundException;
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.PassbookEntry;
@@ -42,16 +41,10 @@ public class TransactionService {
 
     private final PassbookRepository passbookRepository;
 
-    private final CurrencyConverterService converterService;
-
     public ResponseEntity<ApiResponse> transact(TransactionRequest request) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user == null) {
-            throw new UserNotFoundException();
-        }
-
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
         User anotherUser = userRepository.findByUsername(request.getReceiver()).orElseThrow(UserNotFoundException::new);
-
         Wallet usersWallet = walletRepository.findByIdAndUser(request.getSendingWalletId(), user)
                 .orElseThrow(UnauthorizedWalletAccessException::new);
         Wallet anotherUsersWallet = walletRepository.findByIdAndUser(request.getReceivingWalletId(), anotherUser)
@@ -60,26 +53,13 @@ public class TransactionService {
         isSameWallet(usersWallet, anotherUsersWallet);
         isIncompatibleCurrency(request, usersWallet);
 
-        Double serviceChargeAmount = null;
-        Double conversionValue = null;
         Money forexMoney = null;
         Money serviceCharge = null;
-
         Currency anotherUserCurrency = anotherUsersWallet.getMoney().getCurrency();
-
         if (!anotherUserCurrency.equals(request.getMoney().getCurrency())) {
-            serviceChargeAmount = 10.0;
-            serviceChargeAmount = converterService.convert(Currency.INR, anotherUserCurrency, serviceChargeAmount);
-            serviceChargeAmount = Math.round(serviceChargeAmount * 100.0) / 100.0;
-            serviceCharge = new Money(serviceChargeAmount, request.getMoney().getCurrency());
-
-            conversionValue = converterService.convert(
-                    request.getMoney().getCurrency(),
-                    anotherUserCurrency,
-                    request.getMoney().getAmount());
-            conversionValue = Math.round(conversionValue * 100.0) / 100.0;
-
-            forexMoney = new Money(conversionValue, anotherUsersWallet.getMoney().getCurrency());
+            serviceCharge = new Money(10.0, Currency.INR);
+            serviceCharge = serviceCharge.convert(usersWallet.getMoney().getCurrency());
+            forexMoney = request.getMoney().convert(anotherUserCurrency);
         }
 
         if (serviceCharge != null) {
@@ -90,25 +70,32 @@ public class TransactionService {
         anotherUsersWallet.deposit(forexMoney != null ? forexMoney : request.getMoney());
 
         Long timestamp = System.currentTimeMillis();
-        Transaction transferred = Transaction.builder()
-                .user(user)
+        PassbookEntry senderEntry = PassbookEntry.builder()
                 .money(request.getMoney())
+                .timestamp(timestamp)
+                .wallet(usersWallet)
                 .type(TransactionType.TRANSFERRED)
-                .timestamp(timestamp)
-                .conversionValue(null)
-                .serviceCharge(serviceChargeAmount)
+                .serviceCharge(serviceCharge != null ? serviceCharge.getAmount() : 0.0)
                 .build();
-        Transaction received = Transaction.builder()
-                .user(anotherUser)
+
+        PassbookEntry receiverEntry = PassbookEntry.builder()
                 .money(forexMoney != null ? forexMoney : request.getMoney())
-                .type(TransactionType.RECEIVED)
                 .timestamp(timestamp)
-                .conversionValue(conversionValue)
-                .serviceCharge(null)
+                .wallet(usersWallet)
+                .type(TransactionType.RECEIVED)
+                .serviceCharge(0.0)
+                .build();
+
+        Transaction transaction = Transaction.builder()
+                .sender(user)
+                .receiver(anotherUser)
+                .senderEntry(senderEntry)
+                .receiverEntry(receiverEntry)
                 .build();
 
         walletRepository.saveAll(List.of(usersWallet, anotherUsersWallet));
-        transactionRepository.saveAll(List.of(transferred, received));
+        passbookRepository.saveAll(List.of(senderEntry, receiverEntry));
+        transactionRepository.save(transaction);
 
         ApiResponse response = ApiResponse.builder()
                 .timestamp(timestamp)
@@ -122,21 +109,13 @@ public class TransactionService {
     }
 
     public ResponseEntity<ApiResponse> fetch() {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user == null) {
-            throw new UserNotFoundException();
-        }
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
 
-        List<Transaction> transactions = transactionRepository.findAllByUser(user);
-        List<PassbookEntry> entries = passbookRepository.findAllByUser(user);
+        List<Transaction> transactions = transactionRepository.findAllBySenderOrReceiver(user, user);
         List<TransactionResponse> responses = new ArrayList<>();
-
         for (Transaction transaction : transactions) {
             responses.add(new TransactionResponse(transaction));
-        }
-
-        for (PassbookEntry entry : entries) {
-            responses.add(new TransactionResponse(entry));
         }
 
         ApiResponse response = ApiResponse.builder()
@@ -145,36 +124,6 @@ public class TransactionService {
                 .status(HttpStatus.OK)
                 .statusCode(HttpStatus.OK.value())
                 .data(Map.of("transactions", responses))
-                .build();
-
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
-
-    public ResponseEntity<ApiResponse> fetchByTimestamp(Long timestamp) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user == null) {
-            throw new UserNotFoundException();
-        }
-
-        Transaction transaction = transactionRepository.findByUserAndTimestamp(user, timestamp)
-                .orElse(null);
-        TransactionResponse transactionResponse;
-
-        if (transaction == null) {
-            PassbookEntry entry = passbookRepository.findByUserAndTimestamp(user, timestamp)
-                    .orElseThrow(TransactionNotFoundException::new);
-
-            transactionResponse = new TransactionResponse(entry);
-        } else {
-            transactionResponse = new TransactionResponse(transaction);
-        }
-
-        ApiResponse response = ApiResponse.builder()
-                .message("Fetched")
-                .developerMessage("fetched")
-                .status(HttpStatus.OK)
-                .statusCode(HttpStatus.OK.value())
-                .data(Map.of("transactions", transactionResponse))
                 .build();
 
         return ResponseEntity.status(response.getStatus()).body(response);

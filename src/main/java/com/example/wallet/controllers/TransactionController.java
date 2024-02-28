@@ -24,9 +24,4 @@ public class TransactionController {
     public ResponseEntity<ApiResponse> fetch() {
         return this.transactionService.fetch();
     }
-
-    @GetMapping
-    public ResponseEntity<ApiResponse> fetchByTimestamp(@RequestParam(value = "timestamp") Long timestamp) {
-        return this.transactionService.fetchByTimestamp(timestamp);
-    }
 }

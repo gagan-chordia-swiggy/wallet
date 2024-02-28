@@ -3,6 +3,7 @@ package com.example.wallet.services;
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
 import com.example.wallet.dto.WalletResponse;
+import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
@@ -13,8 +14,14 @@ import com.example.wallet.models.Wallet;
 import com.example.wallet.repository.PassbookRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
+import converter.CurrencyGrpc;
+import converter.Request;
+import converter.Response;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,7 +59,7 @@ public class WalletService {
         return this.create(user);
     }
 
-    public ResponseEntity<ApiResponse> deposit(Long walletId, Money moneyRequest) {
+    public ResponseEntity<ApiResponse> deposit(Long walletId, Money request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user == null) {
@@ -60,7 +67,8 @@ public class WalletService {
         }
 
         Wallet wallet = walletRepository.findByIdAndUser(walletId, user).orElseThrow(UnauthorizedWalletAccessException::new);
-        wallet.deposit(moneyRequest);
+        request = request.convert(wallet.getMoney().getCurrency());
+        wallet.deposit(request);
 
         ApiResponse response = ApiResponse.builder()
                 .message("Amount deposited")
@@ -70,11 +78,12 @@ public class WalletService {
                 .data(Map.of("wallet", new WalletResponse(wallet)))
                 .build();
 
-        Money depositedMoney = new Money(moneyRequest.getAmount(), user.getLocation().getCurrency());
+        Money depositedMoney = new Money(request.getAmount(), user.getLocation().getCurrency());
         PassbookEntry entry = PassbookEntry.builder()
-                .user(user)
+                .wallet(wallet)
                 .money(depositedMoney)
                 .type(TransactionType.DEPOSIT)
+                .serviceCharge(0.0)
                 .build();
 
         passbookRepository.save(entry);
@@ -90,6 +99,7 @@ public class WalletService {
         }
 
         Wallet wallet = walletRepository.findByIdAndUser(walletId, user).orElseThrow(UnauthorizedWalletAccessException::new);
+        request = request.convert(wallet.getMoney().getCurrency());
 
         wallet.withdraw(request);
 
@@ -103,9 +113,10 @@ public class WalletService {
 
         Money withdrawnMoney = new Money(request.getAmount(), user.getLocation().getCurrency());
         PassbookEntry entry = PassbookEntry.builder()
-                .user(user)
+                .wallet(wallet)
                 .money(withdrawnMoney)
                 .type(TransactionType.WITHDRAW)
+                .serviceCharge(0.0)
                 .build();
 
         passbookRepository.save(entry);

@@ -1,11 +1,7 @@
 package com.example.wallet.models;
 
 import com.example.wallet.dto.Money;
-import com.example.wallet.enums.TransactionType;
-
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,19 +25,19 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Builder.Default
-    private Long timestamp = System.currentTimeMillis();
+    @ManyToOne
+    @JoinColumn(name = "sender_entry")
+    private PassbookEntry senderEntry;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "receiver_entry")
+    private PassbookEntry receiverEntry;
 
-    private Money money;
+    @ManyToOne
+    @JoinColumn(name = "sender_id")
+    private User sender;
 
-    private Double serviceCharge;
-
-    private Double conversionValue;
-
-    @Enumerated(EnumType.STRING)
-    private TransactionType type;
+    @ManyToOne
+    @JoinColumn(name = "receiver_id")
+    private User receiver;
 }

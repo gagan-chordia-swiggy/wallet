@@ -27,7 +27,10 @@ public class WalletTest {
 
     @Test
     void test_depositInvalidAmountToWallet_throwsException() {
-        Wallet wallet = new Wallet();
+        User user = User.builder()
+                .location(Location.INDIA)
+                .build();
+        Wallet wallet = new Wallet(user);
 
         assertThrows(InvalidAmountException.class, () -> wallet.deposit(new Money(0, Currency.INR)));
     }
@@ -47,7 +50,10 @@ public class WalletTest {
 
     @Test
     void test_withdrawingInvalidAmount_throwsException() {
-        Wallet wallet = new Wallet();
+        User user = User.builder()
+                .location(Location.INDIA)
+                .build();
+        Wallet wallet = new Wallet(user);
 
         assertThrows(InvalidAmountException.class, () -> wallet.withdraw(new Money(0, Currency.INR)));
     }

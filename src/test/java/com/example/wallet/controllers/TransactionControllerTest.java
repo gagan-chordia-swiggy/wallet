@@ -119,34 +119,4 @@ class TransactionControllerTest {
         mockMvc.perform(get("/api/v1/transactions/")).andExpect(status().isBadRequest());
         verify(transactionService, times(1)).fetch();
     }
-
-    @Test
-    void test_fetchTransactionOfAUserWithSpecificTimestampSuccessfully() throws Exception {
-        Long timestamp = System.currentTimeMillis();
-
-        when(transactionService.fetchByTimestamp(timestamp)).thenReturn(new ResponseEntity<>(HttpStatus.FOUND));
-
-        mockMvc.perform(get("/api/v1/transactions?timestamp=" + timestamp)).andExpect(status().isFound());
-        verify(transactionService, times(1)).fetchByTimestamp(timestamp);
-    }
-
-    @Test
-    void test_unknownUserWhileFetchingWithTimestamp_throwsException() throws Exception {
-        Long timestamp = System.currentTimeMillis();
-
-        when(transactionService.fetchByTimestamp(timestamp)).thenThrow(new UserNotFoundException());
-
-        mockMvc.perform(get("/api/v1/transactions?timestamp=" + timestamp)).andExpect(status().isBadRequest());
-        verify(transactionService, times(1)).fetchByTimestamp(timestamp);
-    }
-
-    @Test
-    void test_transactionNotFoundForSpecificTimestamp_throwsException() throws Exception {
-        Long timestamp = System.currentTimeMillis();
-
-        when(transactionService.fetchByTimestamp(timestamp)).thenThrow(new TransactionNotFoundException());
-
-        mockMvc.perform(get("/api/v1/transactions?timestamp=" + timestamp)).andExpect(status().isNotFound());
-        verify(transactionService, times(1)).fetchByTimestamp(timestamp);
-    }
 }

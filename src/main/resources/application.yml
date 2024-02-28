@@ -22,9 +22,3 @@ application:
                 expiration: 86400000
             refresh-token:
                 expiration: 1209600000
-
-converter:
-    grpc:
-        service:
-            host: localhost
-            port: 8001

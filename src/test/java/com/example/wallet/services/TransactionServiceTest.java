@@ -6,9 +6,11 @@ import com.example.wallet.dto.TransactionRequest;
 import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.*;
+import com.example.wallet.models.PassbookEntry;
 import com.example.wallet.models.Transaction;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
+import com.example.wallet.repository.PassbookRepository;
 import com.example.wallet.repository.TransactionRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
@@ -52,6 +54,9 @@ public class TransactionServiceTest {
 
     @Mock
     private TransactionRepository transactionRepository;
+
+    @Mock
+    private PassbookRepository passbookRepository;
 
     @Mock
     private CurrencyConverterService converterService;
@@ -289,6 +294,7 @@ public class TransactionServiceTest {
         Transaction firstTransaction = spy(new Transaction(1L, System.currentTimeMillis(), user, new Money(), null, null, TransactionType.TRANSFERRED));
         Transaction secondTransaction = spy(new Transaction(1L, System.currentTimeMillis(), user, new Money(), null, null, TransactionType.TRANSFERRED));
         Transaction thirdTransaction = spy(new Transaction(1L, System.currentTimeMillis(), user, new Money(), null, null, TransactionType.RECEIVED));
+        PassbookEntry entry = spy(new PassbookEntry(1L, System.currentTimeMillis(), user, new Money(), TransactionType.DEPOSIT));
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
@@ -297,9 +303,11 @@ public class TransactionServiceTest {
         when(thirdTransaction.getUser()).thenReturn(user);
         when(user.getUsername()).thenReturn("user");
         when(transactionRepository.findAllByUser(user)).thenReturn(List.of(firstTransaction, secondTransaction, thirdTransaction));
+        when(passbookRepository.findAllByUser(user)).thenReturn(List.of(entry));
         ResponseEntity<ApiResponse> response = transactionService.fetch();
 
         verify(transactionRepository, times(1)).findAllByUser(user);
+        verify(passbookRepository, times(1)).findAllByUser(user);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("fetched", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }

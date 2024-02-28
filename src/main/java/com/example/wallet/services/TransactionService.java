@@ -11,9 +11,11 @@ import com.example.wallet.exceptions.TransactionForSameWalletException;
 import com.example.wallet.exceptions.TransactionNotFoundException;
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
+import com.example.wallet.models.PassbookEntry;
 import com.example.wallet.models.Transaction;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
+import com.example.wallet.repository.PassbookRepository;
 import com.example.wallet.repository.TransactionRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
@@ -37,6 +39,8 @@ public class TransactionService {
     private final UserRepository userRepository;
 
     private final TransactionRepository transactionRepository;
+
+    private final PassbookRepository passbookRepository;
 
     private final CurrencyConverterService converterService;
 
@@ -124,10 +128,15 @@ public class TransactionService {
         }
 
         List<Transaction> transactions = transactionRepository.findAllByUser(user);
+        List<PassbookEntry> entries = passbookRepository.findAllByUser(user);
         List<TransactionResponse> responses = new ArrayList<>();
 
         for (Transaction transaction : transactions) {
             responses.add(new TransactionResponse(transaction));
+        }
+
+        for (PassbookEntry entry : entries) {
+            responses.add(new TransactionResponse(entry));
         }
 
         ApiResponse response = ApiResponse.builder()
@@ -148,14 +157,24 @@ public class TransactionService {
         }
 
         Transaction transaction = transactionRepository.findByUserAndTimestamp(user, timestamp)
-                .orElseThrow(TransactionNotFoundException::new);
+                .orElse(null);
+        TransactionResponse transactionResponse;
+
+        if (transaction == null) {
+            PassbookEntry entry = passbookRepository.findByUserAndTimestamp(user, timestamp)
+                    .orElseThrow(TransactionNotFoundException::new);
+
+            transactionResponse = new TransactionResponse(entry);
+        } else {
+            transactionResponse = new TransactionResponse(transaction);
+        }
 
         ApiResponse response = ApiResponse.builder()
                 .message("Fetched")
                 .developerMessage("fetched")
                 .status(HttpStatus.OK)
                 .statusCode(HttpStatus.OK.value())
-                .data(Map.of("transactions", new TransactionResponse(transaction)))
+                .data(Map.of("transactions", transactionResponse))
                 .build();
 
         return ResponseEntity.status(response.getStatus()).body(response);

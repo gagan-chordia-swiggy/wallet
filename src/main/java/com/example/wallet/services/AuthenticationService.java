@@ -3,7 +3,6 @@ package com.example.wallet.services;
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.UserRequest;
 import com.example.wallet.dto.UserResponse;
-import com.example.wallet.dto.WalletResponse;
 import com.example.wallet.enums.Location;
 import com.example.wallet.exceptions.InvalidCredentialsException;
 import com.example.wallet.exceptions.InvalidLocationException;

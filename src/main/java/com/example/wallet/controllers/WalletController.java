@@ -2,6 +2,7 @@ package com.example.wallet.controllers;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
+import com.example.wallet.exceptions.InvalidWalletAction;
 import com.example.wallet.services.WalletService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,16 +23,16 @@ public class WalletController {
         return this.walletService.create();
     }
 
-    @PostMapping("/{walletId}/deposit")
+    @PatchMapping("/{walletId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse> deposit(@PathVariable(value = "walletId") Long id, @RequestBody Money moneyRequest) {
-        return this.walletService.deposit(id, moneyRequest);
-    }
+    public ResponseEntity<ApiResponse> action(@PathVariable(value = "walletId") Long id, @RequestBody Money moneyRequest, @RequestHeader(value = "Action") String action) {
+        if (action.equalsIgnoreCase("deposit")) {
+            return this.walletService.deposit(id, moneyRequest);
+        } else if (action.equalsIgnoreCase("withdraw")) {
+            return this.walletService.withdraw(id, moneyRequest);
+        }
 
-    @PostMapping("/{walletId}/withdrawal")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse> withdraw(@PathVariable(value = "walletId") Long id, @RequestBody Money request) {
-        return this.walletService.withdraw(id, request);
+        throw new InvalidWalletAction();
     }
 
     @GetMapping

@@ -50,7 +50,8 @@ public class WalletControllerTest {
 
         when(walletService.deposit(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        mockMvc.perform(post("/api/v1/wallets/1/deposit")
+        mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "deposit")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
@@ -64,7 +65,8 @@ public class WalletControllerTest {
 
         when(walletService.deposit(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
 
-        mockMvc.perform(post("/api/v1/wallets/1/deposit")
+        mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "deposit")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isUnauthorized());
@@ -78,7 +80,8 @@ public class WalletControllerTest {
 
         when(walletService.deposit(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
-        mockMvc.perform(post("/api/v1/wallets/1/deposit")
+        mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "deposit")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -93,7 +96,8 @@ public class WalletControllerTest {
 
         when(walletService.deposit(1L, money)).thenThrow(new UnauthorizedWalletAccessException());
 
-        mockMvc.perform(post("/api/v1/wallets/1/deposit")
+        mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "deposit")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isUnauthorized());
@@ -108,7 +112,8 @@ public class WalletControllerTest {
 
         when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
-        this.mockMvc.perform(post("/api/v1/wallets/1/withdrawal")
+        this.mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isOk());
@@ -122,7 +127,8 @@ public class WalletControllerTest {
 
         when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
 
-        this.mockMvc.perform(post("/api/v1/wallets/1/withdrawal")
+        this.mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isUnauthorized());
@@ -136,7 +142,8 @@ public class WalletControllerTest {
 
         when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
-        mockMvc.perform(post("/api/v1/wallets/1/withdrawal")
+        mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -152,7 +159,8 @@ public class WalletControllerTest {
 
         when(walletService.withdraw(1L, money)).thenReturn(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
-        mockMvc.perform(post("/api/v1/wallets/1/withdrawal")
+        mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "withdraw")
                 .contentType("application/json")
                 .content(request)
         ).andExpect(status().isBadRequest());
@@ -173,5 +181,18 @@ public class WalletControllerTest {
         when(walletService.getWallets()).thenReturn(new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
 
         mockMvc.perform(get("/api/v1/wallets")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void test_unknownActionWithWallet_badRequest() throws Exception {
+        Money money = new Money(15, Currency.INR);
+        String request = objectMapper.writeValueAsString(money);
+
+        mockMvc.perform(post("/api/v1/wallets/1")
+                .header("Action", "with")
+                .contentType("application/json")
+                .content(request)
+        ).andExpect(status().isBadRequest());
     }
 }

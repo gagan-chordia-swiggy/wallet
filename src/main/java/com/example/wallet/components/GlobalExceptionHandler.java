@@ -189,4 +189,16 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+
+    @ExceptionHandler(value = InvalidWalletAction.class)
+    public ResponseEntity<ApiResponse> handleInvalidWalletActionException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("Unknown action")
+                .developerMessage("unknown action")
+                .status(HttpStatus.BAD_REQUEST)
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }

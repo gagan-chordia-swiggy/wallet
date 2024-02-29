@@ -177,4 +177,16 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+
+    @ExceptionHandler(value = PassbookEntryNotFoundException.class)
+    public ResponseEntity<ApiResponse> handlePassEntryNotFoundException() {
+        ApiResponse response = ApiResponse.builder()
+                .message("No entry found for the given timestamp")
+                .developerMessage("no entry found")
+                .status(HttpStatus.NOT_FOUND)
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }

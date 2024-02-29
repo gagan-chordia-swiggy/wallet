@@ -2,13 +2,10 @@ package com.example.wallet.controllers;
 
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
-import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.services.WalletService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

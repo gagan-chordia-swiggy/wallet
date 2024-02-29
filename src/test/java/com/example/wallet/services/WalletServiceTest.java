@@ -11,7 +11,7 @@ import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
-import com.example.wallet.repository.PassbookRepository;
+import com.example.wallet.repository.PassbookEntryRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
 
@@ -45,7 +45,7 @@ public class WalletServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private PassbookRepository passbookRepository;
+    private PassbookEntryRepository passbookEntryRepository;
 
     @InjectMocks
     private WalletService walletService;

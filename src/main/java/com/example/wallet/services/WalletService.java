@@ -3,7 +3,6 @@ package com.example.wallet.services;
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.Money;
 import com.example.wallet.dto.WalletResponse;
-import com.example.wallet.enums.Currency;
 import com.example.wallet.enums.TransactionType;
 import com.example.wallet.exceptions.UnauthorizedWalletAccessException;
 import com.example.wallet.exceptions.UserNotFoundException;
@@ -11,17 +10,11 @@ import com.example.wallet.models.PassbookEntry;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
 
-import com.example.wallet.repository.PassbookRepository;
+import com.example.wallet.repository.PassbookEntryRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
-import converter.CurrencyGrpc;
-import converter.Request;
-import converter.Response;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,7 +29,7 @@ import java.util.Map;
 public class WalletService {
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
-    private final PassbookRepository passbookRepository;
+    private final PassbookEntryRepository passbookEntryRepository;
 
     public ResponseEntity<ApiResponse> create(User user) {
         Wallet wallet = new Wallet(user);
@@ -86,7 +79,7 @@ public class WalletService {
                 .serviceCharge(0.0)
                 .build();
 
-        passbookRepository.save(entry);
+        passbookEntryRepository.save(entry);
         walletRepository.save(wallet);
 
         return ResponseEntity.ok().body(response);
@@ -119,7 +112,7 @@ public class WalletService {
                 .serviceCharge(0.0)
                 .build();
 
-        passbookRepository.save(entry);
+        passbookEntryRepository.save(entry);
         walletRepository.save(wallet);
 
         return ResponseEntity.ok().body(response);

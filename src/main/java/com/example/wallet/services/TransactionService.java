@@ -14,7 +14,7 @@ import com.example.wallet.models.PassbookEntry;
 import com.example.wallet.models.Transaction;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
-import com.example.wallet.repository.PassbookRepository;
+import com.example.wallet.repository.PassbookEntryRepository;
 import com.example.wallet.repository.TransactionRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
@@ -39,7 +39,7 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
 
-    private final PassbookRepository passbookRepository;
+    private final PassbookEntryRepository passbookEntryRepository;
 
     public ResponseEntity<ApiResponse> transact(TransactionRequest request) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -94,7 +94,7 @@ public class TransactionService {
                 .build();
 
         walletRepository.saveAll(List.of(usersWallet, anotherUsersWallet));
-        passbookRepository.saveAll(List.of(senderEntry, receiverEntry));
+        passbookEntryRepository.saveAll(List.of(senderEntry, receiverEntry));
         transactionRepository.save(transaction);
 
         ApiResponse response = ApiResponse.builder()

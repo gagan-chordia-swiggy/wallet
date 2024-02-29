@@ -70,7 +70,7 @@ public class Money {
                 .build();
 
         Response response = stub.convert(request);
-        Money convertedMoney = new Money(response.getValue(), to);
+        Money convertedMoney = new Money(Math.round(response.getValue() * 100.0) / 100.0, to);
 
         channel.shutdown();
 

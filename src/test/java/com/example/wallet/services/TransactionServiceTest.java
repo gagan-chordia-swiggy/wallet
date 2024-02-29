@@ -10,7 +10,7 @@ import com.example.wallet.models.PassbookEntry;
 import com.example.wallet.models.Transaction;
 import com.example.wallet.models.User;
 import com.example.wallet.models.Wallet;
-import com.example.wallet.repository.PassbookRepository;
+import com.example.wallet.repository.PassbookEntryRepository;
 import com.example.wallet.repository.TransactionRepository;
 import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
@@ -56,7 +56,7 @@ public class TransactionServiceTest {
     private TransactionRepository transactionRepository;
 
     @Mock
-    private PassbookRepository passbookRepository;
+    private PassbookEntryRepository passbookEntryRepository;
 
 
     @InjectMocks
@@ -95,7 +95,7 @@ public class TransactionServiceTest {
         verify(anotherWallet, never()).withdraw(transactionAmount);
         verify(walletRepository, times(1)).saveAll(List.of(wallet, anotherWallet));
         verify(transactionRepository, times(1)).save(any(Transaction.class));
-        verify(passbookRepository, times(1)).saveAll(any(List.class));
+        verify(passbookEntryRepository, times(1)).saveAll(any(List.class));
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("transaction complete", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }
@@ -128,7 +128,7 @@ public class TransactionServiceTest {
         verify(anotherWallet, never()).withdraw(transactionAmount);
         verify(walletRepository, times(1)).saveAll(List.of(wallet, anotherWallet));
         verify(transactionRepository, times(1)).save(any(Transaction.class));
-        verify(passbookRepository, times(1)).saveAll(any(List.class));
+        verify(passbookEntryRepository, times(1)).saveAll(any(List.class));
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("transaction complete", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
     }

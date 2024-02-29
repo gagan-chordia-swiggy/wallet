@@ -3,10 +3,16 @@ package com.example.wallet.controllers;
 import com.example.wallet.dto.ApiResponse;
 import com.example.wallet.dto.CurrencyDTO;
 import com.example.wallet.services.CurrencyService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -28,7 +34,7 @@ public class CurrencyController {
         return this.currencyService.update(request);
     }
 
-    @PutMapping("")
+    @PutMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> update(@RequestBody List<CurrencyDTO> request) {
         return this.currencyService.update(request);

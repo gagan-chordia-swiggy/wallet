@@ -140,7 +140,7 @@ class PassbookEntryServiceTest {
         when(entryRepository.findByWalletAndTimestamp(wallet, timestamp)).thenReturn(Optional.of(entry));
         when(entry.getWallet()).thenReturn(wallet);
         when(wallet.getId()).thenReturn(walletId);
-        ResponseEntity<ApiResponse> response = entryService.fetchByTimestamp(walletId, timestamp);
+        ResponseEntity<ApiResponse> response = entryService.fetch(walletId, timestamp);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("fetched", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
@@ -163,7 +163,7 @@ class PassbookEntryServiceTest {
         when(userRepository.findByUsername(username)).thenThrow(new UserNotFoundException());
 
         assertThrows(UserNotFoundException.class, () -> {
-            ResponseEntity<ApiResponse> response = entryService.fetchByTimestamp(walletId, timestamp);
+            ResponseEntity<ApiResponse> response = entryService.fetch(walletId, timestamp);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("user not found", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
@@ -186,7 +186,7 @@ class PassbookEntryServiceTest {
         when(walletRepository.findByIdAndUser(walletId, user)).thenThrow(new UnauthorizedWalletAccessException());
 
         assertThrows(UnauthorizedWalletAccessException.class, () -> {
-            ResponseEntity<ApiResponse> response = entryService.fetchByTimestamp(walletId, timestamp);
+            ResponseEntity<ApiResponse> response = entryService.fetch(walletId, timestamp);
 
             assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
             assertEquals("unauthorized wallet access", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
@@ -211,7 +211,7 @@ class PassbookEntryServiceTest {
         when(entryRepository.findByWalletAndTimestamp(wallet, timestamp)).thenThrow(new PassbookEntryNotFoundException());
 
         assertThrows(PassbookEntryNotFoundException.class, () -> {
-            ResponseEntity<ApiResponse> response = entryService.fetchByTimestamp(walletId, timestamp);
+            ResponseEntity<ApiResponse> response = entryService.fetch(walletId, timestamp);
 
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
             assertEquals("no entry found", Objects.requireNonNull(response.getBody()).getDeveloperMessage());
